@@ -1,0 +1,226 @@
+const pool = require("../config/db");
+const { v4: uuidv4 } = require("uuid");
+
+const getAllPositions = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT p.id, p.name, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.name ASC",
+    );
+
+    res.status(200).json({
+      message: "Position fetched successfully",
+      data: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        department: {
+          id: row.department_id,
+          name: row.department_name,
+        },
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+const getPositionById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT  p.id, p.name, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id WHERE p.id = ?",
+      [id],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "Position not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Position fetched successfully",
+      data: {
+        id: rows[0].id,
+        name: rows[0].name,
+        department: {
+          id: rows[0].department_id,
+          name: rows[0].department_name,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// CREATE POSITION
+const createPosition = async (req, res) => {
+  try {
+    const id = uuidv4();
+    const { department_id, name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        message: "Name is required",
+      });
+    }
+
+    const positionName = name.trim();
+
+    const [existing] = await pool.query(
+      "SELECT id FROM positions WHERE name = ?",
+      [positionName],
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        message: "Position already exists",
+      });
+    }
+
+    if (!department_id) {
+      return res.status(400).json({
+        message: "Department is required",
+      });
+    }
+
+    const [department] = await pool.query(
+      "SELECT * FROM departments WHERE id = ?",
+      [department_id],
+    );
+
+    if (department.length === 0) {
+      return res.status(404).json({
+        message: "Department not found",
+      });
+    }
+
+    await pool.query(
+      `INSERT INTO positions (id, department_id, name) VALUES(?, ?, ?)`,
+      [id, department_id, positionName],
+    );
+
+    res.status(201).json({
+      message: "Position created successfully",
+      data: {
+        id,
+        name: positionName,
+        department: {
+          id: department[0].id,
+          name: department[0].name,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+const updatePosition = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { department_id, name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        message: "Name is required",
+      });
+    }
+
+    const positionName = name.trim();
+
+    const [existing] = await pool.query(
+      "SELECT id FROM positions WHERE name = ? AND id != ?",
+      [positionName, id],
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        message: "Position already exists",
+      });
+    }
+
+    if (!department_id) {
+      return res.status(400).json({
+        message: "Department is required",
+      });
+    }
+
+    const [department] = await pool.query(
+      "SELECT * FROM departments WHERE id = ?",
+      [department_id],
+    );
+
+    if (department.length === 0) {
+      return res.status(404).json({
+        message: "Department not found",
+      });
+    }
+
+    const [result] = await pool.query(
+      `UPDATE positions SET name = ?, department_id = ?  WHERE id = ?`,
+      [positionName, department_id, id],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Position not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Position updated successfully",
+      data: {
+        id,
+        name: positionName,
+        department: {
+          id: department[0].id,
+          name: department[0].name,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+const deletePosition = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.query("DELETE FROM positions WHERE id = ?", [
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Position not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Position deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+module.exports = {
+  getAllPositions,
+  getPositionById,
+  createPosition,
+  updatePosition,
+  deletePosition,
+};
