@@ -205,9 +205,9 @@ const createEmployee = async (req, res) => {
       });
     }
 
-    if (!account_number || !account_number.trim()) {
+    if (account_number || !account_number.trim()) {
       return res.status(400).json({
-        message: "Account number is required",
+        message: "Account number cannot be empty spaces",
       });
     }
 
@@ -251,7 +251,7 @@ const createEmployee = async (req, res) => {
         contract_type.trim(),
         start_date,
         status.trim(),
-        account_number.trim(),
+        account_number && account_number.trim() ? account_number.trim() : null,
         address.trim(),
       ],
     );
@@ -427,7 +427,7 @@ const updateEmployee = async (req, res) => {
         contract_type.trim(),
         start_date,
         status.trim(),
-        account_number.trim(),
+        account_number && account_number.trim() ? account_number.trim() : null,
         address.trim(),
         id,
       ],
