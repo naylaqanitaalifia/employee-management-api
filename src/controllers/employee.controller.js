@@ -205,7 +205,7 @@ const createEmployee = async (req, res) => {
       });
     }
 
-    if (account_number || !account_number.trim()) {
+    if (account_number !== undefined && account_number !== null && account_number.trim() === "") {
       return res.status(400).json({
         message: "Account number cannot be empty spaces",
       });
