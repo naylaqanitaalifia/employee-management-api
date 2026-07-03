@@ -205,11 +205,11 @@ const createEmployee = async (req, res) => {
       });
     }
 
-    if (account_number !== undefined && account_number !== null && account_number.trim() === "") {
-      return res.status(400).json({
-        message: "Account number cannot be empty spaces",
-      });
-    }
+    // if (account_number || !account_number.trim()) {
+    //   return res.status(400).json({
+    //     message: "Account number cannot be empty spaces",
+    //   });
+    // }
 
     if (!address || !address.trim()) {
       return res.status(400).json({
@@ -251,7 +251,8 @@ const createEmployee = async (req, res) => {
         contract_type.trim(),
         start_date,
         status.trim(),
-        account_number && account_number.trim() ? account_number.trim() : null,
+        // account_number && account_number.trim() ? account_number.trim() : null,
+        account_number,
         address.trim(),
       ],
     );
@@ -382,11 +383,11 @@ const updateEmployee = async (req, res) => {
       });
     }
 
-    if (!account_number || !account_number.trim()) {
-      return res.status(400).json({
-        message: "Account number is required",
-      });
-    }
+    // if (!account_number || !account_number.trim()) {
+    //   return res.status(400).json({
+    //     message: "Account number is required",
+    //   });
+    // }
 
     if (!address || !address.trim()) {
       return res.status(400).json({
@@ -427,7 +428,8 @@ const updateEmployee = async (req, res) => {
         contract_type.trim(),
         start_date,
         status.trim(),
-        account_number && account_number.trim() ? account_number.trim() : null,
+        // account_number && account_number.trim() ? account_number.trim() : null,
+        account_number,
         address.trim(),
         id,
       ],
