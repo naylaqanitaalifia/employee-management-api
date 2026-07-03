@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const getAllPositions = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT p.id, p.name, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.name ASC",
+      "SELECT p.id, p.name, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.created_at DESC",
     );
 
     res.status(200).json({

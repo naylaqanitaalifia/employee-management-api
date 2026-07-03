@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const getAllDepartments = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM departments ORDER BY name ASC",
+      "SELECT * FROM departments ORDER BY created_at DESC",
     );
 
     res.status(200).json({
