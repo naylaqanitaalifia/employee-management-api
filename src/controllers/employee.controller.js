@@ -22,7 +22,7 @@ const getAllEmployees = async (req, res) => {
         FROM employees e
         INNER JOIN departments d ON e.department_id = d.id
         INNER JOIN positions p ON e.position_id = p.id
-        ORDER BY e.created_at ASC
+        ORDER BY e.created_at DESC
     `);
 
     res.status(200).json({
