@@ -10,8 +10,12 @@ const getAllPositions = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const [rows] = await pool.query(
-      "SELECT p.*, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?",
+      "SELECT p.*, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id WHERE p.name LIKE ? OR d.name LIKE ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?",
       [`%${search}%`, limit, offset],
+    );
+
+    const [[{ total }]] = await pool.query(
+      "SELECT COUNT(*) as total FROM departments",
     );
 
     res.status(200).json({
