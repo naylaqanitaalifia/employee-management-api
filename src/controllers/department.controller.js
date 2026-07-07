@@ -9,8 +9,10 @@ const getAllDepartments = async (req, res) => {
     );
 
     res.status(200).json({
-      message: "Department fetched successfully",
+      code: 200,
+      message: "Data has been successfully fetched",
       data: rows,
+      status: true,
     });
   } catch (error) {
     res.status(500).json({
