@@ -10,7 +10,8 @@ const getAllDepartments = async (req, res) => {
     const offset = (page - 1) * size;
 
     const [rows] = await pool.query(
-      "SELECT * FROM departments ORDER BY created_at DESC",
+      "SELECT * FROM departments ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      [limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
@@ -23,7 +24,7 @@ const getAllDepartments = async (req, res) => {
       data: {
         count: rows.length,
         page: page,
-        total_count: total_count,
+        total_count: total,
         list: rows,
       },
       status: true,
