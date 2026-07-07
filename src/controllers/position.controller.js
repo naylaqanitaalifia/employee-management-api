@@ -11,7 +11,7 @@ const getAllPositions = async (req, res) => {
 
     const [rows] = await pool.query(
       "SELECT p.*, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id WHERE p.name LIKE ? OR d.name LIKE ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?",
-      [`%${search}%`, limit, offset],
+      [`%${search}%`, `%${search}%`, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
