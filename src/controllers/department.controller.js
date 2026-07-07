@@ -6,12 +6,13 @@ const getAllDepartments = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.size) || 10;
+    const search = req.query.search || "";
 
     const offset = (page - 1) * limit;
 
     const [rows] = await pool.query(
-      "SELECT * FROM departments ORDER BY created_at DESC LIMIT ? OFFSET ?",
-      [limit, offset],
+      "SELECT * FROM departments WHERE name LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      [`%${search}%`, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
