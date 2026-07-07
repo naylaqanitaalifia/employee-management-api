@@ -4,21 +4,36 @@ const { v4: uuidv4 } = require("uuid");
 // GET ALL DEPARTMENTS
 const getAllDepartments = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const size = parseInt(req.query.size) || 10;
+
+    const offset = (page - 1) * size;
+
     const [rows] = await pool.query(
       "SELECT * FROM departments ORDER BY created_at DESC",
+    );
+
+    const [[{ total }]] = await pool.query(
+      "SELECT COUNT(*) as total FROM DEPARTMENTS",
     );
 
     res.status(200).json({
       code: 200,
       message: "Data has been successfully fetched",
       data: {
-        'list': rows
+        count: rows.length,
+        page: page,
+        total_count: total_count,
+        list: rows,
       },
       status: true,
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
+      status: false,
     });
   }
 };
