@@ -4,11 +4,13 @@ const { v4: uuidv4 } = require("uuid");
 const getAllPositions = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT p.id, p.name, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.created_at DESC",
+      "SELECT p.*, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.created_at DESC",
     );
 
     res.status(200).json({
-      message: "Position fetched successfully",
+      status: true,
+      code: 200,
+      message: "Data has been successfully fetched",
       data: rows.map((row) => ({
         id: row.id,
         name: row.name,
@@ -16,6 +18,7 @@ const getAllPositions = async (req, res) => {
           id: row.department_id,
           name: row.department_name,
         },
+        created_at: row.created_at,
       })),
     });
   } catch (error) {
