@@ -13,7 +13,7 @@ const getAllDepartments = async (req, res) => {
       message: "Data has been successfully fetched",
       data: {
         'list': rows
-      }
+      },
       status: true,
     });
   } catch (error) {
