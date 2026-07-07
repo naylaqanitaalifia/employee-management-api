@@ -19,6 +19,7 @@ const getAllDepartments = async (req, res) => {
     );
 
     res.status(200).json({
+      status: true,
       code: 200,
       message: "Data has been successfully fetched",
       data: {
@@ -27,7 +28,6 @@ const getAllDepartments = async (req, res) => {
         total_count: total,
         list: rows,
       },
-      status: true,
     });
   } catch (error) {
     res.status(500).json({
