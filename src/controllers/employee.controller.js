@@ -4,7 +4,14 @@ const { v4: uuidv4 } = require("uuid");
 // GET ALL EMPLOYEES
 const getAllEmployees = async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.size) || 10;
+    const search = req.query.search || "";
+
+    const offset = (page - 1) * limit;
+
+    const [rows] = await pool.query(
+      `
         SELECT 
             e.id, 
             e.name, 
@@ -22,8 +29,17 @@ const getAllEmployees = async (req, res) => {
         FROM employees e
         INNER JOIN departments d ON e.department_id = d.id
         INNER JOIN positions p ON e.position_id = p.id
+        WHERE e.name LIKE ?
         ORDER BY e.created_at DESC
-    `);
+        LIMIT ?
+        OFFSET ?
+    `,
+      [`%${search}%`, limit, offset],
+    );
+
+    const [[{ total }]] = await pool.query(
+      "SELECT COUNT(*) as total FROM employees",
+    );
 
     res.status(200).json({
       message: "Employee fetched successfully",
@@ -45,11 +61,15 @@ const getAllEmployees = async (req, res) => {
         status: row.status,
         account_number: row.account_number,
         address: row.address,
+        created_at: row.created_at,
       })),
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 };
