@@ -14,7 +14,7 @@ const getAllDepartments = async (req, res) => {
     );
 
     const [[{ total }]] = await pool.query(
-      "SELECT COUNT(*) as total FROM DEPARTMENTS",
+      "SELECT COUNT(*) as total FROM departments",
     );
 
     res.status(200).json({
