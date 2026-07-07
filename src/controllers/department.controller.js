@@ -32,10 +32,10 @@ const getAllDepartments = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      status: false,
       code: 500,
       message: "Internal Server Error",
       error: error.message,
-      status: false,
     });
   }
 };

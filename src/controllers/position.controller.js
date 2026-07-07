@@ -3,8 +3,15 @@ const { v4: uuidv4 } = require("uuid");
 
 const getAllPositions = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.size) || 10;
+    const search = req.query.search || "";
+
+    const offset = (page - 1) * limit;
+
     const [rows] = await pool.query(
-      "SELECT p.*, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.created_at DESC",
+      "SELECT p.*, d.id AS department_id, d.name AS department_name FROM positions p INNER JOIN departments d ON p.department_id = d.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?",
+      [`%${search}%`, limit, offset],
     );
 
     res.status(200).json({
@@ -25,7 +32,10 @@ const getAllPositions = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 };
