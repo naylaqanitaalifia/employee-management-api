@@ -5,9 +5,9 @@ const { v4: uuidv4 } = require("uuid");
 const getAllDepartments = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const size = parseInt(req.query.size) || 10;
+    const limit = parseInt(req.query.size) || 10;
 
-    const offset = (page - 1) * size;
+    const offset = (page - 1) * limit;
 
     const [rows] = await pool.query(
       "SELECT * FROM departments ORDER BY created_at DESC LIMIT ? OFFSET ?",
