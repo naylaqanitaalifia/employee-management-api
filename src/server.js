@@ -3,10 +3,11 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-const pool = require("./src/config/db");
-const departmentRoutes = require("./src/routes/department.route");
-const positionRoutes = require("./src/routes/position.route");
-const employeeRoutes = require("./src/routes/employee.route");
+const pool = require("./config/db");
+const departmentRoutes = require("./routes/department.route");
+const positionRoutes = require("./routes/position.route");
+const employeeRoutes = require("./routes/employee.route");
+const leaveRoutes = require("./routes/leave.route");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use("/api/departments", departmentRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/employees", employeeRoutes);
+app.use("/api/leaves", leaveRoutes);
 
 app.get("/", async (req, res) => {
   const [rows] = await pool.query("SELECT 1");
