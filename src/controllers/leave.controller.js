@@ -288,4 +288,5 @@ module.exports = {
   getLeaveById,
   createLeave,
   rejectLeave,
+  approveLeave,
 };
