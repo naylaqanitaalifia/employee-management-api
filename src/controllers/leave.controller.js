@@ -22,7 +22,7 @@ const getAllLeaves = async (req, res) => {
             l.created_at,
             e.id AS employee_id, 
             e.name AS employee_name,
-            e.position_id AS employee_position_id
+            e.position_id AS employee_position_id,
             e.position_name AS employee_position_name
         FROM leaves l 
         INNER JOIN employees e 
