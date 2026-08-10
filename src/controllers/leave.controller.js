@@ -257,7 +257,7 @@ const approveLeave = async (req, res) => {
       return res.status(400).json({
         status: false,
         code: 400,
-        message: "Only pending leave can be rejected",
+        message: "Only pending leave can be approved",
       });
     }
 
