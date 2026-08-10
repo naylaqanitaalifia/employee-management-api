@@ -74,11 +74,13 @@ const getLeaveById = async (req, res) => {
         SELECT l.*,
             e.id AS employee_id, 
             e.name AS employee_name,
-            e.position_id AS employee_position_id,
-            e.position_name AS employee_position_name
+            p.id AS employee_position_id,
+            p.name AS employee_position_name
         FROM leaves l
         INNER JOIN employees e
             ON l.employee_id = e.id
+        INNER JOIN positions p 
+            ON e.position_id = p.id
         WHERE l.id = ?
     `,
       [id],
