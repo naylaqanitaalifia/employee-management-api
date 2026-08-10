@@ -247,6 +247,42 @@ const rejectLeave = async (req, res) => {
   }
 };
 
+const approveLeave = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await pool.query("SELECT id FROM leaves WHERE id = ?", [id]);
+
+    if (rows[0].status !== "pending") {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Only pending leave can be rejected",
+      });
+    }
+
+    await pool.query(
+      // "UPDATE leaves SET status = ?, approved_by = ?, approved_at = ? WHERE id = ?",
+      // ["approved", req.user.id, new Date(), id],
+      "UPDATE leaves SET status = ?, approved_at = ? WHERE id = ?",
+      ["approved", new Date(), id],
+    );
+
+    return res.status(200).json({
+      status: true,
+      code: 200,
+      message: "Leave request approved successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllLeaves,
   getLeaveById,
