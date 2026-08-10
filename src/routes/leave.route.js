@@ -5,6 +5,7 @@ const {
   getAllLeaves,
   getLeaveById,
   createLeave,
+  rejectLeave
   // updateLeave,
   // deleteLeave,
 } = require("../controllers/leave.controller");
@@ -12,6 +13,7 @@ const {
 router.get("/", getAllLeaves);
 router.get("/:id", getLeaveById);
 router.post("/", createLeave);
+router.patch("/:id/reject", rejectLeave);
 // router.put("/:id", updateLeave);
 // router.delete("/:id", deleteLeave);
 

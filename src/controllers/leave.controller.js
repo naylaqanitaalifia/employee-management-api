@@ -101,6 +101,7 @@ const getLeaveById = async (req, res) => {
         start_date: rows[0].start_date,
         end_date: rows[0].end_date,
         reason: rows[0].reason,
+        rejection_reason: rows[0].rejection_reason,
         status: rows[0].status,
         created_at: rows[0].created_at,
         approved_by: rows[0].approved_by,
@@ -190,8 +191,60 @@ const createLeave = async (req, res) => {
   }
 };
 
+const rejectLeave = async (req, res) => {
+  const { id } = req.params;
+  const { rejection_reason } = req.body;
+
+  try {
+    if (!rejection_reason || !rejection_reason.trim()) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Reason is required",
+      });
+    }
+
+    const [rows] = await pool.query("SELECT id, status FROM leaves WHERE id = ?", [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: false,
+        code: 404,
+        message: "Data not found",
+      });
+    }
+
+    if (rows[0].status !== "pending") {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Only pending leave can be rejected",
+      });
+    }
+
+    await pool.query(
+      "UPDATE leaves SET rejection_reason = ?, status = ?, approved_by = ?, approved_at = ? WHERE id = ?",
+      [rejection_reason, "rejected", req.user.id, new Date(), id],
+    );
+
+    return res.status(200).json({
+      status: true,
+      code: 200,
+      message: "Leave request rejected successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllLeaves,
   getLeaveById,
   createLeave,
+  rejectLeave
 };
