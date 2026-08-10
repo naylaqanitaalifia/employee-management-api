@@ -200,7 +200,7 @@ const rejectLeave = async (req, res) => {
       return res.status(400).json({
         status: false,
         code: 400,
-        message: "Reason is required",
+        message: "Reject reason is required",
       });
     }
 
