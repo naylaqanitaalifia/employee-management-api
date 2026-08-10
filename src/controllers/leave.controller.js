@@ -204,7 +204,10 @@ const rejectLeave = async (req, res) => {
       });
     }
 
-    const [rows] = await pool.query("SELECT id, status FROM leaves WHERE id = ?", [id]);
+    const [rows] = await pool.query(
+      "SELECT id, status FROM leaves WHERE id = ?",
+      [id],
+    );
 
     if (rows.length === 0) {
       return res.status(404).json({
@@ -223,8 +226,10 @@ const rejectLeave = async (req, res) => {
     }
 
     await pool.query(
-      "UPDATE leaves SET rejection_reason = ?, status = ?, approved_by = ?, approved_at = ? WHERE id = ?",
-      [rejection_reason, "rejected", req.user.id, new Date(), id],
+      // "UPDATE leaves SET rejection_reason = ?, status = ?, approved_by = ?, approved_at = ? WHERE id = ?",
+      "UPDATE leaves SET rejection_reason = ?, status = ?, approved_at = ? WHERE id = ?",
+      // [rejection_reason, "rejected", req.user.id, new Date(), id],
+      [rejection_reason, "rejected", new Date(), id],
     );
 
     return res.status(200).json({
@@ -246,5 +251,5 @@ module.exports = {
   getAllLeaves,
   getLeaveById,
   createLeave,
-  rejectLeave
+  rejectLeave,
 };
