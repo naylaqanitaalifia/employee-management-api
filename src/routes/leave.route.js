@@ -7,8 +7,8 @@ const {
   createLeave,
   rejectLeave,
   approveLeave,
-  updateLeave,
-  deleteLeave,
+  updateLeave
+  // deleteLeave,
 } = require("../controllers/leave.controller");
 
 router.get("/", getAllLeaves);
