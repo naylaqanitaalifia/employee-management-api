@@ -8,6 +8,7 @@ const departmentRoutes = require("./routes/department.route");
 const positionRoutes = require("./routes/position.route");
 const employeeRoutes = require("./routes/employee.route");
 const leaveRoutes = require("./routes/leave.route");
+const payrollRoutes = require("./routes/payroll.route");
 
 const app = express();
 
