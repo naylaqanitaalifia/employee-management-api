@@ -321,6 +321,30 @@ const updateLeave = async (req, res) => {
   }
 };
 
+const deleteLeave = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.query("DELETE FROM leaves WHERE id = ?", [
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Leave not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Leave deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 const rejectLeave = async (req, res) => {
   const { id } = req.params;
   const { rejection_reason } = req.body;
@@ -429,6 +453,7 @@ module.exports = {
   getLeaveById,
   createLeave,
   updateLeave,
+  deleteLeave,
   rejectLeave,
   approveLeave,
 };
