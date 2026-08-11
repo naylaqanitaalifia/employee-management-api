@@ -184,9 +184,10 @@ const createLeave = async (req, res) => {
       });
     }
 
-    const days = Math.floor(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    ) + 1;
+    const days =
+      Math.floor(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1;
 
     await pool.query(
       `INSERT INTO leaves (id, type, days, start_date, end_date, reason, employee_id) VALUES(?, ?, ?, ?, ?, ?, ?)`,
@@ -209,6 +210,105 @@ const createLeave = async (req, res) => {
           id: employee[0].id,
           name: employee[0].name,
         },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const updateLeave = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type, start_date, end_date, reason } = req.body;
+
+    const [existing] = await pool.query(
+      "SELECT id, status FROM leaves WHERE id = ?",
+      [id],
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        message: "Leave not found",
+      });
+    }
+
+    const errors = required({
+      type,
+      start_date,
+      end_date,
+      reason,
+    });
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Validation Error",
+        errors,
+      });
+    }
+
+    if (existing[0].status !== "pending") {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Only pending leave can be updated",
+      });
+    }
+
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid date format",
+      });
+    }
+
+    if (endDate < startDate) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "End date must be greater than start date",
+      });
+    }
+
+    const days =
+      Math.floor(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1;
+
+    await pool.query(
+      `UPDATE leaves
+       SET type = ?,
+           days = ?,
+           start_date = ?,
+           end_date = ?,
+           reason = ?
+       WHERE id = ?`,
+      [type, days, start_date, end_date, reason, id],
+    );
+
+    res.status(200).json({
+      status: true,
+      code: 200,
+      message: "Leave request updated successfully",
+      data: {
+        id,
+        type,
+        days,
+        start_date,
+        end_date,
+        reason,
+        status: existing[0].status,
       },
     });
   } catch (error) {
@@ -328,6 +428,7 @@ module.exports = {
   getAllLeaves,
   getLeaveById,
   createLeave,
+  updateLeave,
   rejectLeave,
   approveLeave,
 };
