@@ -133,11 +133,10 @@ const getLeaveById = async (req, res) => {
 const createLeave = async (req, res) => {
   try {
     const id = uuidv4();
-    const { type, days, start_date, end_date, reason, employee_id } = req.body;
+    const { type, start_date, end_date, reason, employee_id } = req.body;
 
     const errors = required({
       type,
-      days,
       start_date,
       end_date,
       reason,
@@ -165,6 +164,29 @@ const createLeave = async (req, res) => {
         message: "Employee not found",
       });
     }
+
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid date format",
+      });
+    }
+
+    if (endDate < startDate) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "End date must be greater than start date",
+      });
+    }
+
+    const days = Math.floor(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    ) + 1;
 
     await pool.query(
       `INSERT INTO leaves (id, type, days, start_date, end_date, reason, employee_id) VALUES(?, ?, ?, ?, ?, ?, ?)`,
