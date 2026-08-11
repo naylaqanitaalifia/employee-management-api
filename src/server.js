@@ -18,6 +18,7 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/leaves", leaveRoutes);
+app.use("/api/payrolls", payrollRoutes);
 
 app.get("/", async (req, res) => {
   const [rows] = await pool.query("SELECT 1");

@@ -68,7 +68,7 @@ const getAllPayrolls = async (req, res) => {
   }
 };
 
-const getLeaveById = async (req, res) => {
+const getPayrollById = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -79,12 +79,12 @@ const getLeaveById = async (req, res) => {
             e.name AS employee_name,
             p.id AS employee_position_id,
             p.name AS employee_position_name
-        FROM leaves l
+        FROM payrolls p
         INNER JOIN employees e
-            ON l.employee_id = e.id
+            ON p.employee_id = e.id
         INNER JOIN positions p 
             ON e.position_id = p.id
-        WHERE l.id = ?
+        WHERE p.id = ?
     `,
       [id],
     );
@@ -218,13 +218,13 @@ const updatePayroll = async (req, res) => {
     const { type, start_date, end_date, reason } = req.body;
 
     const [existing] = await pool.query(
-      "SELECT id, status FROM leaves WHERE id = ?",
+      "SELECT id, status FROM payrolls WHERE id = ?",
       [id],
     );
 
     if (existing.length === 0) {
       return res.status(404).json({
-        message: "Leave not found",
+        message: "Payroll not found",
       });
     }
 
@@ -277,7 +277,7 @@ const updatePayroll = async (req, res) => {
       ) + 1;
 
     await pool.query(
-      `UPDATE leaves
+      `UPDATE payrolls
        SET type = ?,
            days = ?,
            start_date = ?,
@@ -315,20 +315,37 @@ const deletePayroll = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [result] = await pool.query("DELETE FROM leaves WHERE id = ?", [id]);
+    const [result] = await pool.query("DELETE FROM payrolls WHERE id = ?", [
+      id,
+    ]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
-        message: "Leave not found",
+        status: false,
+        code: 404,
+        message: "Payroll not found",
       });
     }
 
     res.status(200).json({
-      message: "Leave deleted successfully",
+      status: true,
+      code: 200,
+      message: "Payroll deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
+};
+
+module.exports = {
+  getAllPayrolls,
+  getPayrollById,
+  createPayroll,
+  updatePayroll,
+  deletePayroll,
 };

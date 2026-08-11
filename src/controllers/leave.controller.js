@@ -325,22 +325,27 @@ const deleteLeave = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [result] = await pool.query("DELETE FROM leaves WHERE id = ?", [
-      id,
-    ]);
+    const [result] = await pool.query("DELETE FROM leaves WHERE id = ?", [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
+        status: false,
+        code: 404,
         message: "Leave not found",
       });
     }
 
     res.status(200).json({
+      status: true,
+      code: 200,
       message: "Leave deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 };
