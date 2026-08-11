@@ -34,7 +34,7 @@ const getAllPayrolls = async (req, res) => {
     );
 
     const [[{ total }]] = await pool.query(
-      "SELECT COUNT(*) as total FROM leaves",
+      "SELECT COUNT(*) as total FROM payrolls",
     );
 
     res.status(200).json({
@@ -172,8 +172,26 @@ const createPayroll = async (req, res) => {
       });
     }
 
+    const net_salary =
+      Number(basic_salary) +
+      Number(allowance) +
+      Number(overtime_pay) -
+      Number(deduction);
+
     await pool.query(
-      `INSERT INTO payrolls (id, employee_id, period_month, basic_salary, allowance, overtime_pay, deduction) VALUES(?, ?, ?, ?, ?, ?, ?)`,
+      `
+        INSERT INTO payrolls (
+          id,
+          employee_id,
+          period_month,
+          basic_salary,
+          allowance,
+          overtime_pay,
+          deduction,
+          net_salary
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
       [
         id,
         employee_id,
@@ -182,6 +200,7 @@ const createPayroll = async (req, res) => {
         allowance,
         overtime_pay,
         deduction,
+        net_salary,
       ],
     );
 
@@ -200,6 +219,7 @@ const createPayroll = async (req, res) => {
         allowance,
         overtime_pay,
         deduction,
+        net_salary,
       },
     });
   } catch (error) {
@@ -248,7 +268,7 @@ const updatePayroll = async (req, res) => {
       return res.status(400).json({
         status: false,
         code: 400,
-        message: "Only pending leave can be updated",
+        message: "Only pending payroll can be updated",
       });
     }
 
