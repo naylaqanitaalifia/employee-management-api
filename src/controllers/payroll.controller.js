@@ -52,6 +52,7 @@ const getAllPayrolls = async (req, res) => {
         allowance: row.allowance,
         overtime_pay: row.overtime_pay,
         deduction: row.deduction,
+        status: row.status,
         created_at: row.created_at,
         created_by: row.created_by,
         updated_at: row.updated_at,
@@ -200,7 +201,7 @@ const createPayroll = async (req, res) => {
         allowance,
         overtime_pay,
         deduction,
-        net_salary,
+        net_salary
       ],
     );
 
@@ -220,6 +221,8 @@ const createPayroll = async (req, res) => {
         overtime_pay,
         deduction,
         net_salary,
+        status: "draft",
+        paid_at: null,
       },
     });
   } catch (error) {
