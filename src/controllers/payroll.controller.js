@@ -86,8 +86,6 @@ const getPayrollById = async (req, res) => {
         FROM payrolls p
         INNER JOIN employees e
             ON p.employee_id = e.id
-        INNER JOIN positions p 
-            ON e.position_id = p.id
         WHERE p.id = ?
     `,
       [id],
