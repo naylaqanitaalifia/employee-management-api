@@ -185,7 +185,7 @@ const updatePosition = async (req, res) => {
 
     const [result] = await pool.query(
       `
-      positions SET name = ?, department_id = ?  WHERE id = ?`,
+        UPDATE positions SET name = ?, department_id = ?  WHERE id = ?`,
       [positionName, department_id, id],
     );
 
