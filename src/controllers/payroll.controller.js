@@ -20,11 +20,7 @@ const getAllPayrolls = async (req, res) => {
             p.overtime_pay,
             p.deduction,
             p.net_salary,
-            p.status,
-            p.created_at,
-            p.created_by,
-            p.updated_at,
-            p.updated_by,
+            p.status
             e.id AS employee_id, 
             e.name AS employee_name 
         FROM payrolls p
@@ -59,10 +55,10 @@ const getAllPayrolls = async (req, res) => {
         deduction: row.deduction,
         net_salary: row.net_salary,
         status: row.status,
-        created_at: row.created_at,
-        created_by: row.created_by,
-        updated_at: row.updated_at,
-        updated_by: row.updated_by,
+        // created_at: row.created_at,
+        // created_by: row.created_by,
+        // updated_at: row.updated_at,
+        // updated_by: row.updated_by,
       })),
     });
   } catch (error) {
