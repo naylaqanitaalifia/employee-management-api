@@ -25,7 +25,8 @@ const getAllEmployees = async (req, res) => {
             e.start_date,
             e.status,
             e.account_number,
-            e.address
+            e.address,
+            created_at
         FROM employees e
         INNER JOIN departments d ON e.department_id = d.id
         INNER JOIN positions p ON e.position_id = p.id
