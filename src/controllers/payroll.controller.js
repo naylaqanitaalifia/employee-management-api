@@ -21,6 +21,8 @@ const getAllPayrolls = async (req, res) => {
             p.deduction,
             p.net_salary,
             p.status,
+            p.created_at,
+            p.updated_at,
             e.id AS employee_id, 
             e.name AS employee_name 
         FROM payrolls p
@@ -55,9 +57,9 @@ const getAllPayrolls = async (req, res) => {
         deduction: row.deduction,
         net_salary: row.net_salary,
         status: row.status,
-        // created_at: row.created_at,
+        created_at: row.created_at,
         // created_by: row.created_by,
-        // updated_at: row.updated_at,
+        updated_at: row.updated_at,
         // updated_by: row.updated_by,
       })),
     });
