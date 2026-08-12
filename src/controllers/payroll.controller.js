@@ -41,7 +41,7 @@ const getAllPayrolls = async (req, res) => {
     res.status(200).json({
       status: true,
       code: 200,
-      message: "Payroll data fetched successfully",
+      message: "Payroll fetched successfully",
       data: rows.map((row) => ({
         id: row.id,
         employee: {
@@ -53,6 +53,7 @@ const getAllPayrolls = async (req, res) => {
         allowance: row.allowance,
         overtime_pay: row.overtime_pay,
         deduction: row.deduction,
+        net_salary: row.net_salary,
         status: row.status,
         created_at: row.created_at,
         created_by: row.created_by,
