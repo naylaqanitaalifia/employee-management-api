@@ -22,6 +22,9 @@ const getAllPayrolls = async (req, res) => {
             p.net_salary,
             p.status,
             p.created_at,
+            p.created_by,
+            p.updated_at,
+            p.updated_by,
             e.id AS employee_id, 
             e.name AS employee_name 
         FROM payrolls p
@@ -73,15 +76,14 @@ const getAllPayrolls = async (req, res) => {
 };
 
 const getPayrollById = async (req, res) => {
-  const { id } = req.params;
-
   try {
+    const { id } = req.params;
+
     const [rows] = await pool.query(
       `
         SELECT p.*,
             e.id AS employee_id, 
-            e.name AS employee_name,
-            p.id AS employee_position_id
+            e.name AS employee_name
         FROM payrolls p
         INNER JOIN employees e
             ON p.employee_id = e.id
@@ -244,7 +246,14 @@ const createPayroll = async (req, res) => {
 const updatePayroll = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type, start_date, end_date, reason } = req.body;
+    const {
+      employee_id,
+      period_month,
+      basic_salary,
+      allowance,
+      overtime_pay,
+      deduction,
+    } = req.body;
 
     const [existing] = await pool.query(
       "SELECT id, status FROM payrolls WHERE id = ?",
@@ -275,7 +284,7 @@ const updatePayroll = async (req, res) => {
       });
     }
 
-    if (existing[0].status !== "pending") {
+    if (existing[0].status !== "draft") {
       return res.status(400).json({
         status: false,
         code: 400,
@@ -283,39 +292,45 @@ const updatePayroll = async (req, res) => {
       });
     }
 
-    const startDate = new Date(start_date);
-    const endDate = new Date(end_date);
+    const [employee] = await pool.query(
+      "SELECT id, name FROM employees WHERE id = ?",
+      [employee_id],
+    );
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return res.status(400).json({
+    if (employee.length === 0) {
+      return res.status(404).json({
         status: false,
-        code: 400,
-        message: "Invalid date format",
+        code: 404,
+        message: "Employee not found",
       });
     }
 
-    if (endDate < startDate) {
-      return res.status(400).json({
-        status: false,
-        code: 400,
-        message: "End date must be greater than start date",
-      });
-    }
-
-    const days =
-      Math.floor(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-      ) + 1;
+    const net_salary =
+      Number(basic_salary) +
+      Number(allowance) +
+      Number(overtime_pay) -
+      Number(deduction);
 
     await pool.query(
       `UPDATE payrolls
-       SET type = ?,
-           days = ?,
-           start_date = ?,
-           end_date = ?,
-           reason = ?
+       SET employee_id = ?,
+           period_month = ?,
+           basic_salary = ?,
+           allowance = ?,
+           overtime_pay = ?,
+           deduction = ?,
+           net_salary = ?
        WHERE id = ?`,
-      [type, days, start_date, end_date, reason, id],
+      [
+        employee_id,
+        period_month,
+        basic_salary,
+        allowance,
+        overtime_pay,
+        deduction,
+        net_salary,
+        id,
+      ],
     );
 
     res.status(200).json({
@@ -324,11 +339,13 @@ const updatePayroll = async (req, res) => {
       message: "Payroll updated successfully",
       data: {
         id,
-        type,
-        days,
-        start_date,
-        end_date,
-        reason,
+        employee_id,
+        period_month,
+        basic_salary,
+        allowance,
+        overtime_pay,
+        deduction,
+        net_salary,
         status: existing[0].status,
       },
     });
@@ -346,11 +363,12 @@ const deletePayroll = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [result] = await pool.query("DELETE FROM payrolls WHERE id = ?", [
-      id,
-    ]);
+    const [result] = await pool.query(
+      "SELECT id, status FROM payrolls WHERE id = ?",
+      [id],
+    );
 
-    if (result.affectedRows === 0) {
+    if (result.length === 0) {
       return res.status(404).json({
         status: false,
         code: 404,
@@ -358,10 +376,82 @@ const deletePayroll = async (req, res) => {
       });
     }
 
+    if (result[0].status !== "draft") {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Payroll cannot be deleted",
+      });
+    }
+
+    await pool.query("DELETE FROM payrolls WHERE id = ?", [id]);
+
     res.status(200).json({
       status: true,
       code: 200,
       message: "Payroll deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const statusPayroll = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.query(
+      "SELECT id, status FROM payrolls WHERE id = ?",
+      [id],
+    );
+
+    if (result.length === 0) {
+      return res.status(404).json({
+        status: false,
+        code: 404,
+        message: "Payroll not found",
+      });
+    }
+
+    if (result[0].status === "cancel") {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Payroll has already been cancelled",
+      });
+    }
+
+    if (result[0].status === "paid") {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Payroll has already been paid",
+      });
+    }
+
+    const nextStatus = result[0].status === "draft" ? "processed" : "paid";
+
+    const paidAt = nextStatus === "paid" ? new Date() : null;
+
+    await pool.query(
+      "UPDATE payrolls SET status = ?, paid_at = ? WHERE id = ?",
+      [nextStatus, paidAt, id],
+    );
+
+    res.status(200).json({
+      status: true,
+      code: 200,
+      message: "Payroll status updated successfully",
+      data: {
+        id,
+        status: nextStatus,
+        paid_at: paidAt,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -379,4 +469,5 @@ module.exports = {
   createPayroll,
   updatePayroll,
   deletePayroll,
+  statusPayroll,
 };
