@@ -20,6 +20,7 @@ const getAllPayrolls = async (req, res) => {
             p.overtime_pay,
             p.deduction,
             p.net_salary,
+            p.status,
             p.created_at,
             e.id AS employee_id, 
             e.name AS employee_name 
