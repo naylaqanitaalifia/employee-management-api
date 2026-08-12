@@ -110,17 +110,23 @@ const getPayrollById = async (req, res) => {
         employee: {
           id: rows[0].employee_id,
           name: rows[0].employee_name,
-          position: {
-            id: rows[0].employee_position_id,
-            name: rows[0].employee_position_name,
-          },
+          // position: {
+          //   id: rows[0].employee_position_id,
+          //   name: rows[0].employee_position_name,
+          // },
         },
-        days: rows[0].days,
-        start_date: rows[0].start_date,
-        end_date: rows[0].end_date,
+        period_month: rows[0].period_month,
+        basic_salary: rows[0].basic_salary,
+        allowance: rows[0].allowance,
+        overtime_pay: rows[0].overtime_pay,
+        deduction: rows[0].deduction,
+        net_salary: rows[0].net_salary,
+        status: rows[0].status,
+        paid_at: rows[0].paid_at,
         created_at: rows[0].created_at,
         created_by: rows[0].created_by,
-        approved_at: rows[0].approved_at,
+        updated_at: rows[0].updated_at,
+        updated_by: rows[0].updated_by,
       },
     });
   } catch (error) {
