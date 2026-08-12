@@ -19,6 +19,7 @@ const getAllPayrolls = async (req, res) => {
             p.allowance,
             p.overtime_pay,
             p.deduction,
+            p.net_salary,
             p.created_at,
             e.id AS employee_id, 
             e.name AS employee_name 
@@ -94,14 +95,14 @@ const getPayrollById = async (req, res) => {
       return res.status(404).json({
         status: false,
         code: 404,
-        message: "Data not found",
+        message: "Payroll not found",
       });
     }
 
     res.status(200).json({
       status: true,
       code: 200,
-      message: "Payroll data fetched successfully",
+      message: "Payroll fetched successfully",
       data: {
         id: rows[0].id,
         employee: {
@@ -201,7 +202,7 @@ const createPayroll = async (req, res) => {
         allowance,
         overtime_pay,
         deduction,
-        net_salary
+        net_salary,
       ],
     );
 
@@ -252,10 +253,12 @@ const updatePayroll = async (req, res) => {
     }
 
     const errors = required({
-      type,
-      start_date,
-      end_date,
-      reason,
+      employee_id,
+      period_month,
+      basic_salary,
+      allowance,
+      overtime_pay,
+      deduction,
     });
 
     if (Object.keys(errors).length > 0) {
@@ -271,7 +274,7 @@ const updatePayroll = async (req, res) => {
       return res.status(400).json({
         status: false,
         code: 400,
-        message: "Only pending payroll can be updated",
+        message: "Only draft payroll can be updated",
       });
     }
 
