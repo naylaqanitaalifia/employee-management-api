@@ -81,8 +81,7 @@ const getPayrollById = async (req, res) => {
         SELECT p.*,
             e.id AS employee_id, 
             e.name AS employee_name,
-            p.id AS employee_position_id,
-            p.name AS employee_position_name
+            p.id AS employee_position_id
         FROM payrolls p
         INNER JOIN employees e
             ON p.employee_id = e.id
