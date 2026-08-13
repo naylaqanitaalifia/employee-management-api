@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const getAllDepartments = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.size) || 10;
+    const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || "";
 
     const offset = (page - 1) * limit;
