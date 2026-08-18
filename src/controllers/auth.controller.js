@@ -1,3 +1,5 @@
+const pool = require("../config/db");
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
