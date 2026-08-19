@@ -16,8 +16,21 @@ const getAllLeaves = async (req, res) => {
     const queryParams = [`%${search}%`];
 
     if (role !== "ADMIN") {
+      const [user] = await pool.query(
+        "SELECT employee_id FROM users WHERE id = ?",
+        [id],
+      );
+
+      if (user.length === 0) {
+        return res.status(404).json({
+          status: false,
+          code: 404,
+          message: "User not found",
+        });
+      }
+
       whereClause += ` AND l.employee_id = ?`;
-      queryParams.push(id);
+      queryParams.push(user[0].employee_id);
     }
 
     const [rows] = await pool.query(
