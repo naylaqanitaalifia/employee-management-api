@@ -1,7 +1,14 @@
 const pool = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
+const bcrypt = require("bcrypt");
 
-// GET ALL EMPLOYEES
+const generateTemporaryPassword = (name, phone) => {
+  const namePart = name.replace(/\s/g, "").slice(0, 4);
+  const phonePart = phone.slice(-4);
+
+  return `${namePart}${phonePart}`;
+};
+
 const getAllEmployees = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -75,7 +82,6 @@ const getAllEmployees = async (req, res) => {
   }
 };
 
-// GET EMPLOYEE BY ID
 const getEmployeeById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -141,8 +147,12 @@ const getEmployeeById = async (req, res) => {
 };
 
 const createEmployee = async (req, res) => {
+  const connection = await pool.getConnection();
+
   try {
     const id = uuidv4();
+    const userId = uuidv4();
+
     const {
       name,
       email,
@@ -260,7 +270,16 @@ const createEmployee = async (req, res) => {
       });
     }
 
-    await pool.query(
+    const temporaryPassword = generateTemporaryPassword(
+      name.trim(),
+      phone.trim(),
+    );
+
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+    await connection.beginTransaction();
+
+    await connection.query(
       "INSERT INTO employees (id, name, email, phone, department_id, position_id, contract_type, start_date, status, account_number, address) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         id,
@@ -277,6 +296,21 @@ const createEmployee = async (req, res) => {
         address.trim(),
       ],
     );
+
+    await connection.query(
+      `
+        INSERT INTO users (
+          id,
+          employee_id,
+          password,
+          role
+        )
+        VALUES(?, ?, ?, ?)
+      `,
+      [userId, id, hashedPassword, "EMPLOYEE"],
+    );
+
+    await connection.commit();
 
     res.status(201).json({
       message: "Employee created successfully",
@@ -296,14 +330,22 @@ const createEmployee = async (req, res) => {
         contract_type: contract_type.trim(),
         start_date,
         status: status.trim(),
-        account_number: account_number.trim(),
+        account_number: account_number.trim() || null,
         address: address.trim(),
+        temporary_password: temporaryPassword,
       },
     });
   } catch (error) {
+    await connection.rollback();
+
     res.status(500).json({
-      message: error.message,
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
     });
+  } finally {
+    connection.release();
   }
 };
 
@@ -480,7 +522,7 @@ const updateEmployee = async (req, res) => {
         contract_type: contract_type.trim(),
         start_date,
         status: status.trim(),
-        account_number: account_number.trim(),
+        account_number: account_number.trim() || null,
         address: address.trim(),
       },
     });
