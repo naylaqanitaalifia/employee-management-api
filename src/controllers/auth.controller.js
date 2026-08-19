@@ -28,6 +28,7 @@ const login = async (req, res) => {
             u.id,
             u.employee_id,
             u.password,
+            u.role,
             e.name AS employee_name,
             e.email
         FROM users u
