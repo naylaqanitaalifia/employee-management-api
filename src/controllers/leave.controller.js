@@ -25,7 +25,7 @@ const getAllLeaves = async (req, res) => {
         return res.status(404).json({
           status: false,
           code: 404,
-          message: "User not found",
+          message: "Employee not found",
         });
       }
 

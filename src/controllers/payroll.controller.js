@@ -4,11 +4,34 @@ const { required } = require("../utils/validation");
 
 const getAllPayrolls = async (req, res) => {
   try {
+    const { id, role } = req.user;
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.size) || 10;
     const search = req.query.search || "";
 
     const offset = (page - 1) * limit;
+
+    let whereClause = `WHERE e.name LIKE ?`;
+    const queryParams = [`%${search}%`];
+
+    if (role !== "ADMIN") {
+      const [user] = await pool.query(
+        "SELECT employee_id FROM users WHERE id = ?",
+        [id],
+      );
+
+      if (user.length === 0) {
+        return res.status(404).json({
+          status: false,
+          code: 404,
+          message: "Employee not found",
+        });
+      }
+
+      whereClause += ` AND p.employee_id = ?`;
+      queryParams.push(user[0].employee_id);
+    }
 
     const [rows] = await pool.query(
       `
@@ -28,12 +51,12 @@ const getAllPayrolls = async (req, res) => {
         FROM payrolls p
         INNER JOIN employees e 
             ON p.employee_id = e.id
-        WHERE e.name LIKE ?
+        ${whereClause}
         ORDER BY p.created_at DESC
         LIMIT ? 
         OFFSET ?
     `,
-      [`%${search}%`, limit, offset],
+      [...queryParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
