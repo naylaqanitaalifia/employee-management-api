@@ -10,6 +10,7 @@ const positionRoutes = require("./routes/position.route");
 const employeeRoutes = require("./routes/employee.route");
 const leaveRoutes = require("./routes/leave.route");
 const payrollRoutes = require("./routes/payroll.route");
+const authMiddleware = require("./middleware/auth-middleware");
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use(authMiddleware);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/employees", employeeRoutes);
