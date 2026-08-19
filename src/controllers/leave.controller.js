@@ -4,37 +4,54 @@ const { required } = require("../utils/validation");
 
 const getAllLeaves = async (req, res) => {
   try {
+    const { id, role } = req.user;
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.size) || 10;
     const search = req.query.search || "";
 
     const offset = (page - 1) * limit;
 
+    let whereClause = `WHERE e.name LIKE ?`;
+    const queryParams = [`%${search}%`];
+
+    if (role !== "ADMIN") {
+      whereClause += ` AND l.employee_id = ?`;
+      queryParams.push(id);
+    }
+
     const [rows] = await pool.query(
       `
         SELECT 
-            l.id,
-            l.type,
-            l.days,
-            l.start_date,
-            l.end_date,
-            l.status, 
-            l.created_at,
-            e.id AS employee_id, 
-            e.name AS employee_name 
+          l.id,
+          l.type,
+          l.days,
+          l.start_date,
+          l.end_date,
+          l.status, 
+          l.created_at,
+          e.id AS employee_id, 
+          e.name AS employee_name 
         FROM leaves l 
         INNER JOIN employees e 
-            ON l.employee_id = e.id
-        WHERE e.name LIKE ?
+          ON l.employee_id = e.id
+        ${whereClause}
         ORDER BY l.created_at DESC
         LIMIT ? 
         OFFSET ?
     `,
-      [`%${search}%`, limit, offset],
+      [...queryParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
-      "SELECT COUNT(*) as total FROM leaves",
+      `
+        SELECT COUNT(*) AS total
+        FROM leaves l
+        INNER JOIN employees e
+          ON l.employee_id = e.id
+        ${whereClause}
+      `,
+      queryParams,
     );
 
     res.status(200).json({
@@ -54,6 +71,12 @@ const getAllLeaves = async (req, res) => {
           name: row.employee_name,
         },
       })),
+      pagination: {
+        page,
+        size: limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     res.status(500).json({
