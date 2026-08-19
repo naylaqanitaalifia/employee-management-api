@@ -52,7 +52,7 @@ const getAllPayrolls = async (req, res) => {
         INNER JOIN employees e 
             ON p.employee_id = e.id
         ${whereClause}
-        ORDER BY p.created_at DESC
+        ORDER BY p.period_month DESC
         LIMIT ? 
         OFFSET ?
     `,
