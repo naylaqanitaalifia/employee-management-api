@@ -60,7 +60,14 @@ const getAllPayrolls = async (req, res) => {
     );
 
     const [[{ total }]] = await pool.query(
-      "SELECT COUNT(*) as total FROM payrolls",
+      `
+        SELECT COUNT(*) AS total
+        FROM payrolls p
+        INNER JOIN employees e
+          ON p.employee_id = e.id
+        ${whereClause}
+      `,
+      queryParams,
     );
 
     res.status(200).json({
