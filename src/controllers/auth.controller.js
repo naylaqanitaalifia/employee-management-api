@@ -76,7 +76,7 @@ const login = async (req, res) => {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1d",
+        expiresIn: "15m",
       },
     );
 
@@ -165,7 +165,7 @@ const refreshToken = async (req, res) => {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1d",
+        expiresIn: "15m",
       },
     );
 
