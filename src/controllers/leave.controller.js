@@ -2,15 +2,138 @@ const pool = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 const { required } = require("../utils/validation");
 
+// GET ALL LEAVES
+
+/**
+ * @swagger
+ * /api/leaves:
+ *    get:
+ *      summary: Get all leaves
+ *      tags: [Leaves]
+ *      parameters:
+ *        - in: query
+ *          name: filter
+ *          required: false
+ *          schema:
+ *            type: string
+ *        - in: query
+ *          name: limit
+ *          required: true
+ *          schema:
+ *            type: number
+ *        - in: query
+ *          name: page
+ *          required: true
+ *          schema:
+ *            type: number
+ *        - in: query
+ *          name: with_deleted
+ *          required: true
+ *          schema:
+ *            type: boolean
+ *        - in: query
+ *          name: order_field
+ *          required: true
+ *          schema:
+ *            type: string
+ *        - in: query
+ *          name: order_direction
+ *          required: true
+ *          schema:
+ *            type: string
+ *            enum: [ASC, DESC]
+ *      responses:
+ *        200:
+ *          description: Successfully retrieved leaves
+ *        400:
+ *          description: Invalid request parameters
+ *        500:
+ *          description: Internal server error
+ */
+
 const getAllLeaves = async (req, res) => {
   try {
     const { id, role } = req.user;
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.size) || 10;
-    const search = req.query.search || "";
+    const schema = Joi.object({
+      filter: Joi.string().allow("").optional(),
+      limit: Joi.number().min(1).required(),
+      page: Joi.number().min(1).required(),
+      with_deleted: Joi.boolean().required(),
+      order_field: Joi.string().min(1).required(),
+      order_direction: Joi.string().valid("ASC", "DESC").required(),
+    });
 
-    const offset = (page - 1) * limit;
+    // Memvalidasi query parameter menggunakan schema di atas.
+    const param = await schema.validateAsync(req.query);
+
+    // Mengubah filter menjadi object jika filter dikirim dalam format JSON.
+    let parsedFilter = {};
+
+    // Memeriksa apakah filter dikirim dan tidak kosong.
+    if (param.filter) {
+      try {
+        parsedFilter = JSON.parse(param.filter);
+      } catch (error) {
+        return res.status(400).json({
+          status: false,
+          code: 400,
+          message: "Invalid filter format",
+        });
+      }
+    }
+
+    const allowedFilterFields = ["type"];
+
+    // Mengambil semua nama field yang dikirim di dalam filter.
+    const filterFields = Object.keys(parsedFilter);
+
+    // Memastikan semua field yang dikirim merupakan field yang diperbolehkan.
+    const hasInvalidFilter = filterFields.some(
+      (field) => !allowedFilterFields.includes(field),
+    );
+
+    if (hasInvalidFilter) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid filter field",
+      });
+    }
+
+    // Mengambil nilai name dari filter.
+    const filterType = parsedFilter.type || "";
+
+    const limit = param.limit;
+
+    // Menghitung offset berdasarkan page dan limit.
+    const offset = (param.page - 1) * limit;
+
+    // Daftar kolom yang boleh digunakan untuk sorting.
+
+    const allowedOrderFields = {
+      id: "l.id",
+      name: "l.type",
+      created_at: "l.created_at",
+      created_by: "l.created_by",
+      updated_at: "l.updated_at",
+      updated_by: "l.updated_by",
+      deleted_at: "l.deleted_at",
+      deleted_by: "l.deleted_by",
+    };
+
+    // Memastikan field sorting valid.
+    if (!allowedOrderFields[param.order_field]) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid order field",
+      });
+    }
+
+    const deletedCondition = param.with_deleted
+      ? ""
+      : "AND l.deleted_at IS NULL";
 
     let whereClause = `WHERE e.name LIKE ?`;
     const queryParams = [`%${search}%`];
@@ -49,11 +172,12 @@ const getAllLeaves = async (req, res) => {
         INNER JOIN employees e 
           ON l.employee_id = e.id
         ${whereClause}
+        ${deletedCondition}
         ORDER BY l.created_at DESC
-        LIMIT ? 
-        OFFSET ?
+        LIMIT ${limit}
+        OFFSET ${offset}
     `,
-      [...queryParams, limit, offset],
+      [...queryParams],
     );
 
     const [[{ total }]] = await pool.query(
@@ -63,6 +187,7 @@ const getAllLeaves = async (req, res) => {
         INNER JOIN employees e
           ON l.employee_id = e.id
         ${whereClause}
+        ${deletedCondition}
       `,
       queryParams,
     );

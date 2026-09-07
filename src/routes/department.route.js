@@ -9,6 +9,7 @@ const {
   deleteDepartment,
 } = require("../controllers/department.controller");
 
+
 router.get("/", getAllDepartments);
 router.get("/:id", getDepartmentById);
 router.post("/", createDepartment);
