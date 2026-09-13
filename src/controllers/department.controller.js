@@ -136,7 +136,7 @@ const getAllDepartments = async (req, res) => {
         FROM departments
         WHERE name LIKE ?
         ${deletedCondition}
-        ORDER BY ${param.order_field} ${param.order_direction}
+        ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit} OFFSET ${offset}
       `,
       [`%${filterName}%`],

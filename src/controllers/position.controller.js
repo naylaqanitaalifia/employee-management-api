@@ -81,7 +81,7 @@ const getAllPositions = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["name", "department"];
+    const allowedFilterFields = ["name", "department", "search"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -100,8 +100,24 @@ const getAllPositions = async (req, res) => {
     }
 
     // Mengambil nilai name dari filter.
-    const filterPositionName = parsedFilter.name || "";
-    const filterDepartmentName = parsedFilter.department?.name || "";
+    const searchKeyword =
+      parsedFilter.search ||
+      parsedFilter.name ||
+      parsedFilter.department?.name ||
+      "";
+
+    let whereConditions = [];
+    let queryParams = [];
+
+    if (searchKeyword) {
+      whereConditions.push(`(p.name LIKE ? OR d.name LIKE ?)`);
+      queryParams.push(`%${searchKeyword}%`, `%${searchKeyword}%`);
+    }
+
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
     const limit = param.limit;
 
@@ -160,7 +176,7 @@ const getAllPositions = async (req, res) => {
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit} OFFSET ${offset}
       `,
-      [`%${filterPositionName}%`, `%${filterDepartmentName}%`],
+      queryParams,
     );
 
     const [[{ total }]] = await pool.query(
@@ -175,7 +191,7 @@ const getAllPositions = async (req, res) => {
         )
         ${deletedCondition}
       `,
-      [`%${filterPositionName}%`, `%${filterDepartmentName}%`],
+      queryParams,
     );
 
     res.status(200).json({
@@ -540,8 +556,7 @@ const updatePosition = async (req, res) => {
         SELECT * 
         FROM departments 
         WHERE id = ?
-      `
-        ,
+      `,
       [department_id],
     );
 
