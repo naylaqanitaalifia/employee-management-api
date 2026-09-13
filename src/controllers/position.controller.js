@@ -168,10 +168,6 @@ const getAllPositions = async (req, res) => {
         FROM positions p 
         INNER JOIN departments d 
         ON p.department_id = d.id 
-        WHERE (
-          p.name LIKE ? 
-          OR d.name LIKE ?
-        )
         ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit} OFFSET ${offset}
@@ -185,10 +181,6 @@ const getAllPositions = async (req, res) => {
         FROM positions p
         INNER JOIN departments d
         ON p.department_id = d.id
-        WHERE (
-          p.name LIKE ?
-          OR d.name LIKE ?
-        )
         ${whereClause}
       `,
       queryParams,
