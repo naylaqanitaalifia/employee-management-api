@@ -172,7 +172,7 @@ const getAllPositions = async (req, res) => {
           p.name LIKE ? 
           OR d.name LIKE ?
         )
-        ${deletedCondition}
+        ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit} OFFSET ${offset}
       `,
@@ -189,7 +189,7 @@ const getAllPositions = async (req, res) => {
           p.name LIKE ?
           OR d.name LIKE ?
         )
-        ${deletedCondition}
+        ${whereClause}
       `,
       queryParams,
     );
