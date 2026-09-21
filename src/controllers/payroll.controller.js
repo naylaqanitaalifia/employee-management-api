@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const Joi = require("joi");
 const { v4: uuidv4 } = require("uuid");
 const { required } = require("../utils/validation");
 
@@ -6,14 +7,86 @@ const getAllPayrolls = async (req, res) => {
   try {
     const { id, role } = req.user;
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.size) || 10;
-    const search = req.query.search || "";
+    const schema = Joi.object({
+      filter: Joi.string().allow("").optional(),
+      limit: Joi.number().min(1).required(),
+      page: Joi.number().min(1).required(),
+      with_deleted: Joi.boolean().required(),
+      order_field: Joi.string().min(1).required(),
+      order_direction: Joi.string().valid("ASC", "DESC").required(),
+    });
 
-    const offset = (page - 1) * limit;
+    // Memvalidasi query parameter menggunakan schema di atas.
+    const param = await schema.validateAsync(req.query);
 
-    let whereClause = `WHERE e.name LIKE ?`;
-    const queryParams = [`%${search}%`];
+    // Mengubah filter menjadi object jika filter dikirim dalam format JSON.
+    let parsedFilter = {};
+
+    // Memeriksa apakah filter dikirim dan tidak kosong.
+    if (param.filter) {
+      try {
+        parsedFilter = JSON.parse(param.filter);
+      } catch (error) {
+        return res.status(400).json({
+          status: false,
+          code: 400,
+          message: "Invalid filter format",
+        });
+      }
+    }
+
+    const allowedFilterFields = ["name"];
+
+    // Mengambil semua nama field yang dikirim di dalam filter.
+    const filterFields = Object.keys(parsedFilter);
+
+    // Memastikan semua field yang dikirim merupakan field yang diperbolehkan.
+    const hasInvalidFilter = filterFields.some(
+      (field) => !allowedFilterFields.includes(field),
+    );
+
+    if (hasInvalidFilter) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid filter field",
+      });
+    }
+
+    // Mengambil nilai name dari filter.
+    const filterName = parsedFilter.name || "";
+
+    const limit = param.limit;
+
+    // Menghitung offset berdasarkan page dan limit.
+    const offset = (param.page - 1) * limit;
+
+    // Daftar kolom yang boleh digunakan untuk sorting.
+
+    const allowedOrderFields = {
+      id: "p.id",
+      name: "e.name",
+      period_month: "p.period_month",
+      created_at: "p.created_at",
+      created_by: "p.created_by",
+      updated_at: "p.updated_at",
+      updated_by: "p.updated_by",
+      deleted_at: "p.deleted_at",
+      deleted_by: "p.deleted_by",
+    };
+
+    // Memastikan field sorting valid.
+    if (!allowedOrderFields[param.order_field]) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid order field",
+      });
+    }
+
+    const deletedCondition = param.with_deleted
+      ? ""
+      : "AND p.deleted_at IS NULL";
 
     if (role !== "ADMIN") {
       const [user] = await pool.query(
@@ -29,8 +102,8 @@ const getAllPayrolls = async (req, res) => {
         });
       }
 
-      whereClause += ` AND p.employee_id = ?`;
-      queryParams.push(user[0].employee_id);
+      // whereClause += ` AND p.employee_id = ?`;
+      // queryParams.push(user[0].employee_id);
     }
 
     const [rows] = await pool.query(
@@ -51,12 +124,13 @@ const getAllPayrolls = async (req, res) => {
         FROM payrolls p
         INNER JOIN employees e 
             ON p.employee_id = e.id
-        ${whereClause}
-        ORDER BY p.period_month DESC
-        LIMIT ? 
-        OFFSET ?
+        WHERE e.name LIKE ?
+        ${deletedConditione}
+        ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
+        LIMIT ${limit}
+        OFFSET ${offset}
     `,
-      [...queryParams, limit, offset],
+      [`%${filterName}%`],
     );
 
     const [[{ total }]] = await pool.query(
@@ -65,16 +139,21 @@ const getAllPayrolls = async (req, res) => {
         FROM payrolls p
         INNER JOIN employees e
           ON p.employee_id = e.id
-        ${whereClause}
+        WHERE e.name LIKE ?
+        ${deletedCondition}
       `,
-      queryParams,
+      [`%${filterName}%`],
     );
 
     res.status(200).json({
       status: true,
       code: 200,
       message: "Payroll fetched successfully",
-      data: rows.map((row) => ({
+      data: {
+        count: rows.length,
+        page: param.page,
+        total_count: total,
+        list: rows.map((row) => ({
         id: row.id,
         employee: {
           id: row.employee_id,
@@ -92,6 +171,7 @@ const getAllPayrolls = async (req, res) => {
         updated_at: row.updated_at,
         // updated_by: row.updated_by,
       })),
+      }
     });
   } catch (error) {
     res.status(500).json({
