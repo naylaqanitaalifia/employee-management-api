@@ -125,7 +125,7 @@ const getAllPayrolls = async (req, res) => {
         INNER JOIN employees e 
             ON p.employee_id = e.id
         WHERE e.name LIKE ?
-        ${deletedConditione}
+        ${deletedCondition}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit}
         OFFSET ${offset}
