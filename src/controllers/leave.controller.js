@@ -84,7 +84,7 @@ const getAllLeaves = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["type"];
+    const allowedFilterFields = ["name"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -103,7 +103,7 @@ const getAllLeaves = async (req, res) => {
     }
 
     // Mengambil nilai name dari filter.
-    const filterType = parsedFilter.type || "";
+    const filterName = parsedFilter.name || "";
 
     const limit = param.limit;
 
@@ -114,7 +114,8 @@ const getAllLeaves = async (req, res) => {
 
     const allowedOrderFields = {
       id: "l.id",
-      name: "l.type",
+      name: "e.name",
+      type: "l.type",
       created_at: "l.created_at",
       created_by: "l.created_by",
       updated_at: "l.updated_at",
@@ -169,13 +170,13 @@ const getAllLeaves = async (req, res) => {
         FROM leaves l 
         INNER JOIN employees e 
           ON l.employee_id = e.id
-        WHERE l.type LIKE ?
+        WHERE e.name LIKE ?
         ${deletedCondition}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit}
         OFFSET ${offset}
     `,
-      [`%${filterType}%`],
+      [`%${filterName}%`],
     );
 
     const [[{ total }]] = await pool.query(
@@ -184,10 +185,10 @@ const getAllLeaves = async (req, res) => {
         FROM leaves l
         INNER JOIN employees e
           ON l.employee_id = e.id
-        WHERE l.type LIKE ?
+        WHERE e.name LIKE ?
         ${deletedCondition}
       `,
-      [`%${filterType}%`],
+      [`%${filterName}%`],
     );
 
     res.status(200).json({
