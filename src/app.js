@@ -26,7 +26,7 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
-// app.use(authMiddleware);
+app.use(authMiddleware);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/employees", employeeRoutes);
