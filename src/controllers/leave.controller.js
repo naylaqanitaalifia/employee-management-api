@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const Joi = require("joi");
 const { v4: uuidv4 } = require("uuid");
 const { required } = require("../utils/validation");
 
@@ -135,9 +136,6 @@ const getAllLeaves = async (req, res) => {
       ? ""
       : "AND l.deleted_at IS NULL";
 
-    let whereClause = `WHERE e.name LIKE ?`;
-    const queryParams = [`%${search}%`];
-
     if (role !== "ADMIN") {
       const [user] = await pool.query(
         "SELECT employee_id FROM users WHERE id = ?",
@@ -152,8 +150,8 @@ const getAllLeaves = async (req, res) => {
         });
       }
 
-      whereClause += ` AND l.employee_id = ?`;
-      queryParams.push(user[0].employee_id);
+      // whereClause += ` AND l.employee_id = ?`;
+      // queryParams.push(user[0].employee_id);
     }
 
     const [rows] = await pool.query(
@@ -171,13 +169,13 @@ const getAllLeaves = async (req, res) => {
         FROM leaves l 
         INNER JOIN employees e 
           ON l.employee_id = e.id
-        ${whereClause}
+        WHERE l.type LIKE ?
         ${deletedCondition}
-        ORDER BY l.created_at DESC
+        ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit}
         OFFSET ${offset}
     `,
-      [...queryParams],
+      [`%${filterType}%`],
     );
 
     const [[{ total }]] = await pool.query(
@@ -186,34 +184,33 @@ const getAllLeaves = async (req, res) => {
         FROM leaves l
         INNER JOIN employees e
           ON l.employee_id = e.id
-        ${whereClause}
+        WHERE l.type LIKE ?
         ${deletedCondition}
       `,
-      queryParams,
+      [`%${filterType}%`],
     );
 
     res.status(200).json({
       status: true,
       code: 200,
-      message: "Data has been successfully fetched",
-      data: rows.map((row) => ({
-        id: row.id,
-        type: row.type,
-        days: row.days,
-        start_date: row.start_date,
-        end_date: row.end_date,
-        status: row.status,
-        created_at: row.created_at,
-        employee: {
-          id: row.employee_id,
-          name: row.employee_name,
-        },
-      })),
-      pagination: {
-        page,
-        size: limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+      message: "Leaves fetched successfully",
+      data: {
+        count: rows.length,
+        page: param.page,
+        total_count: total,
+        list: rows.map((row) => ({
+          id: row.id,
+          type: row.type,
+          days: row.days,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          status: row.status,
+          created_at: row.created_at,
+          employee: {
+            id: row.employee_id,
+            name: row.employee_name,
+          },
+        })),
       },
     });
   } catch (error) {
