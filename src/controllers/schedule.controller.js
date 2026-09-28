@@ -249,6 +249,8 @@ const getScheduleById = async (req, res) => {
 const createSchedule = async (req, res) => {
   try {
     const id = uuidv4();
+    const created_by = req.user.id;
+
     const {
       title,
       type,
@@ -349,9 +351,10 @@ const createSchedule = async (req, res) => {
           end_time,
           location_type,
           location,
-          online_meeting_link
+          online_meeting_link,
+          created_by
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         id,
@@ -365,17 +368,25 @@ const createSchedule = async (req, res) => {
         location_type,
         location,
         online_meeting_link,
+        created_by,
       ],
     );
 
     const scheduleEmployee = employee_ids.map((employee_id) => [
+      uuidv4(),
       id,
       employee_id,
+      created_by,
     ]);
 
     await pool.query(
       `
-        INSERT INTO schedule_employees (schedule_id, employee_id)
+        INSERT INTO schedule_employees (
+          id,
+          schedule_id, 
+          employee_id,
+          created_by
+        )
         VALUES ?
       `,
       [scheduleEmployee],
@@ -401,6 +412,7 @@ const createSchedule = async (req, res) => {
           id: employee.id,
           name: employee.name,
         })),
+        created_by,
       },
     });
   } catch (error) {
