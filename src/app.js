@@ -12,6 +12,7 @@ const positionRoutes = require("./routes/position.route");
 const employeeRoutes = require("./routes/employee.route");
 const leaveRoutes = require("./routes/leave.route");
 const payrollRoutes = require("./routes/payroll.route");
+const scheduleRoutes = require("./routes/schedule.route");
 const authMiddleware = require("./middleware/auth-middleware");
 
 const app = express(); // Membuat instance aplikasi Express.
@@ -32,6 +33,7 @@ app.use("/api/positions", positionRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/payrolls", payrollRoutes);
+app.use("/api/schedules", scheduleRoutes);
 
 app.get("/", async (req, res) => {
   const [rows] = await pool.query("SELECT 1");
