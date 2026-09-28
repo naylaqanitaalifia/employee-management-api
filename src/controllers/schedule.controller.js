@@ -193,13 +193,20 @@ const getScheduleById = async (req, res) => {
 
     const [rows] = await pool.query(
       `
-        SELECT p.*,
+        SELECT s.*,
             e.id AS employee_id, 
             e.name AS employee_name
-        FROM payrolls p
-        INNER JOIN employees e
-            ON p.employee_id = e.id
-        WHERE p.id = ?
+        FROM schedules s
+        
+        LEFT JOIN schedule_employees se
+          ON se.schedule_id = s.id
+          AND se.deleted_at IS NULL
+
+        LEFT JOIN employees e
+          ON e.id = se.employee_id
+
+        WHERE s.id = ?
+          AND s.deleted_at IS NULL
     `,
       [id],
     );
@@ -208,32 +215,30 @@ const getScheduleById = async (req, res) => {
       return res.status(404).json({
         status: false,
         code: 404,
-        message: "Payroll not found",
+        message: "Schedule not found",
       });
     }
 
     res.status(200).json({
       status: true,
       code: 200,
-      message: "Payroll fetched successfully",
+      message: "Schedule fetched successfully",
       data: {
         id: rows[0].id,
         employee: {
           id: rows[0].employee_id,
           name: rows[0].employee_name,
-          // position: {
-          //   id: rows[0].employee_position_id,
-          //   name: rows[0].employee_position_name,
-          // },
         },
-        period_month: rows[0].period_month,
-        basic_salary: rows[0].basic_salary,
-        allowance: rows[0].allowance,
-        overtime_pay: rows[0].overtime_pay,
-        deduction: rows[0].deduction,
-        net_salary: rows[0].net_salary,
-        status: rows[0].status,
-        paid_at: rows[0].paid_at,
+        title: rows[0].title,
+        type: rows[0].type,
+        description: rows[0].description,
+        start_date: rows[0].start_date,
+        end_date: rows[0].end_date,
+        start_time: rows[0].start_time,
+        end_time: rows[0].end_time,
+        location_type: rows[0].location_type,
+        location: rows[0].location,
+        online_meeting_link: rows[0].online_meeting_link,
         created_at: rows[0].created_at,
         created_by: rows[0].created_by,
         updated_at: rows[0].updated_at,
