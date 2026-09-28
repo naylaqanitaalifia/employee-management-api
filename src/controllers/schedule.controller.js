@@ -225,10 +225,12 @@ const getScheduleById = async (req, res) => {
       message: "Schedule fetched successfully",
       data: {
         id: rows[0].id,
-        employee: {
-          id: rows[0].employee_id,
-          name: rows[0].employee_name,
-        },
+        employees: row
+          .filter((row) => row.employee_id)
+          .map((row) => ({
+            id: row.employee_id,
+            name: row.employee_name,
+          })),
         title: rows[0].title,
         type: rows[0].type,
         description: rows[0].description,
