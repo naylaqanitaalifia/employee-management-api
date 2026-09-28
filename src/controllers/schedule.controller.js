@@ -35,7 +35,7 @@ const getAllSchedules = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["name"];
+    const allowedFilterFields = ["title"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -53,8 +53,8 @@ const getAllSchedules = async (req, res) => {
       });
     }
 
-    // Mengambil nilai name dari filter.
-    const filterName = parsedFilter.name || "";
+    // Mengambil nilai title dari filter.
+    const filterTitle = parsedFilter.title || "";
 
     const limit = param.limit;
 
@@ -64,15 +64,14 @@ const getAllSchedules = async (req, res) => {
     // Daftar kolom yang boleh digunakan untuk sorting.
 
     const allowedOrderFields = {
-      id: "p.id",
-      name: "e.name",
-      period_month: "p.period_month",
-      created_at: "p.created_at",
-      created_by: "p.created_by",
-      updated_at: "p.updated_at",
-      updated_by: "p.updated_by",
-      deleted_at: "p.deleted_at",
-      deleted_by: "p.deleted_by",
+      id: "s.id",
+      title: "s.title",
+      created_at: "s.created_at",
+      created_by: "s.created_by",
+      updated_at: "s.updated_at",
+      updated_by: "s.updated_by",
+      deleted_at: "s.deleted_at",
+      deleted_by: "s.deleted_by",
     };
 
     // Memastikan field sorting valid.
@@ -86,7 +85,11 @@ const getAllSchedules = async (req, res) => {
 
     const deletedCondition = param.with_deleted
       ? ""
-      : "AND p.deleted_at IS NULL";
+      : "AND s.deleted_at IS NULL";
+
+    let employeeCondition = "";
+
+    const queryParams = [`%${filterTitle}%`];
 
     if (role !== "ADMIN") {
       const [user] = await pool.query(
@@ -102,74 +105,75 @@ const getAllSchedules = async (req, res) => {
         });
       }
 
-      // whereClause += ` AND p.employee_id = ?`;
-      // queryParams.push(user[0].employee_id);
+      employeeCondition = `
+        AND EXISTS (
+          SELECT 1
+          FROM schedule_employees se
+          WHERE se.schedule_id = s.id
+            AND se.employee_id = ?
+            AND se.deleted_at IS NULL
+        )
+      `;
+
+      queryParams.push(user[0].employee_id);
     }
 
     const [rows] = await pool.query(
       `
         SELECT 
-            p.id,
-            p.period_month,
-            p.basic_salary,
-            p.allowance,
-            p.overtime_pay,
-            p.deduction,
-            p.net_salary,
-            p.status,
-            p.created_at,
-            p.updated_at,
-            e.id AS employee_id, 
-            e.name AS employee_name 
-        FROM payrolls p
-        INNER JOIN employees e 
-            ON p.employee_id = e.id
-        WHERE e.name LIKE ?
+            s.id,
+            s.title,
+            s.type,
+            s.start_date,
+            s.end_date,
+            s.start_time,
+            s.end_time,
+            s.created_at,
+            s.created_by,
+            s.updated_at,
+            s.updated_by
+        FROM schedules s
+        WHERE s.title LIKE ?
         ${deletedCondition}
+        ${employeeCondition}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit}
         OFFSET ${offset}
     `,
-      [`%${filterName}%`],
+      queryParams,
     );
 
     const [[{ total }]] = await pool.query(
       `
         SELECT COUNT(*) AS total
-        FROM payrolls p
-        INNER JOIN employees e
-          ON p.employee_id = e.id
-        WHERE e.name LIKE ?
+        FROM schedules s
+        WHERE s.title LIKE ?
         ${deletedCondition}
+        ${employeeCondition}
       `,
-      [`%${filterName}%`],
+      queryParams,
     );
 
     res.status(200).json({
       status: true,
       code: 200,
-      message: "Payroll fetched successfully",
+      message: "Schedule fetched successfully",
       data: {
         count: rows.length,
         page: param.page,
         total_count: total,
         list: rows.map((row) => ({
           id: row.id,
-          employee: {
-            id: row.employee_id,
-            name: row.employee_name,
-          },
-          period_month: row.period_month,
-          basic_salary: row.basic_salary,
-          allowance: row.allowance,
-          overtime_pay: row.overtime_pay,
-          deduction: row.deduction,
-          net_salary: row.net_salary,
-          status: row.status,
+          title: row.title,
+          type: row.type,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          start_time: row.start_time,
+          end_time: row.end_time,
           created_at: row.created_at,
-          // created_by: row.created_by,
+          created_by: row.created_by,
           updated_at: row.updated_at,
-          // updated_by: row.updated_by,
+          updated_by: row.updated_by,
         })),
       },
     });
