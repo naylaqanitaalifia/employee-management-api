@@ -7,6 +7,7 @@ const swaggerSpec = require("./config/swagger"); // Mengambil konfigurasi OpenAP
 const pool = require("./config/db");
 
 const authRoutes = require("./routes/auth.route");
+const profileRoutes = require("./routes/profile.route");
 const departmentRoutes = require("./routes/department.route");
 const positionRoutes = require("./routes/position.route");
 const employeeRoutes = require("./routes/employee.route");
@@ -28,6 +29,7 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use(authMiddleware);
+app.use("/api/profile", profileRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/employees", employeeRoutes);
