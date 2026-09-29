@@ -357,7 +357,7 @@ const updateProfile = async (req, res) => {
 
     const [existingPhone] = await pool.query(
       "SELECT id FROM employees WHERE phone = ? AND id != ?",
-      [phone.trim(), id],
+      [phone.trim(), employeeId],
     );
 
     if (existingPhone.length > 0) {
