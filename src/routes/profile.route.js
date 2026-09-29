@@ -7,6 +7,6 @@ const {
 } = require("../controllers/profile.controller");
 
 router.get("/", getProfile);
-router.patch("/:id", updateProfile);
+router.patch("/", updateProfile);
 
 module.exports = router;
