@@ -381,12 +381,6 @@ const updateProfile = async (req, res) => {
       [phone.trim(), birth_date, address.trim(), employeeId],
     );
 
-    // if (result.affectedRows === 0) {
-    //   return res.status(404).json({
-    //     message: "Employee not found",
-    //   });
-    // }
-
     res.status(200).json({
       status: true,
       code: 200,
