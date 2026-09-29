@@ -298,6 +298,7 @@ const getEmployeeById = async (req, res) => {
         id: row.id,
         name: row.name,
         email: row.email,
+        birth_date: row.birth_date,
         phone: row.phone,
         department: {
           id: row.department_id,
