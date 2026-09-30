@@ -339,7 +339,7 @@ const createSchedule = async (req, res) => {
     }
 
     const [employees] = await pool.query(
-      "SELECT id, name FROM employees WHERE id IN (?)",
+      "SELECT id, name, photo FROM employees WHERE id IN (?)",
       [employee_ids],
     );
 
