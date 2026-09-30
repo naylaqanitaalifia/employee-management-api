@@ -1,5 +1,6 @@
 const express = require("express"); // Mengimport Express untuk membuat aplikasi backend.
 const cors = require("cors");
+const path = require("path");
 
 const swaggerUi = require("swagger-ui-express"); // Mengimport Swagger UI untuk menampilkan dokumentasi API di browser.
 const swaggerSpec = require("./config/swagger"); // Mengambil konfigurasi OpenAPI yang sudah dibuat di swagger.js.
@@ -20,6 +21,8 @@ const app = express(); // Membuat instance aplikasi Express.
 
 app.use(cors());
 app.use(express.json()); // Membuat Express bisa membaca request body dalam format JSON.
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
   "/api-docs", // Menentukan URL untuk membuka dokumentasi Swagger.
