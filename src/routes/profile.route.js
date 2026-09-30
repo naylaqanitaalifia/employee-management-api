@@ -9,6 +9,6 @@ const {
 
 router.get("/", getProfile);
 router.patch("/", updateProfile);
-router.patch("/photo", upload.single, updateProfilePhoto);
+router.patch("/photo", upload.single("photo"), updateProfilePhoto);
 
 module.exports = router;
