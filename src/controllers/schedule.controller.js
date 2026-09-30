@@ -422,6 +422,7 @@ const createSchedule = async (req, res) => {
         employee_ids: employees.map((employee) => ({
           id: employee.id,
           name: employee.name,
+          photo: employee.photo,
         })),
         created_by,
       },
