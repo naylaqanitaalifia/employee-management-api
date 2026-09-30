@@ -263,7 +263,7 @@ const updateProfilePhoto = async (req, res) => {
 
     const employeeId = users[0].employee_id;
 
-    const photoPath = `uploads/profile/${req.file.filename}`;
+    const photoPath = `/uploads/profile/${req.file.filename}`;
 
     await pool.query(
       `
