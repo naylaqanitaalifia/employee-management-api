@@ -195,7 +195,8 @@ const getScheduleById = async (req, res) => {
       `
         SELECT s.*,
             e.id AS employee_id, 
-            e.name AS employee_name
+            e.name AS employee_name,
+            e.photo AS employee_photo
         FROM schedules s
         
         LEFT JOIN schedule_employees se
@@ -230,7 +231,7 @@ const getScheduleById = async (req, res) => {
           .map((row) => ({
             id: row.employee_id,
             name: row.employee_name,
-            photo: row.photo,
+            photo: row.employee_photo,
           })),
         title: rows[0].title,
         type: rows[0].type,
