@@ -230,6 +230,7 @@ const getScheduleById = async (req, res) => {
           .map((row) => ({
             id: row.employee_id,
             name: row.employee_name,
+            photo: row.photo,
           })),
         title: rows[0].title,
         type: rows[0].type,
