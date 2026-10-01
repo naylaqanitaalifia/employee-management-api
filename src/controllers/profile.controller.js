@@ -243,6 +243,8 @@ const updateProfilePhoto = async (req, res) => {
       });
     }
 
+    console.log("saved to:", req.file.path);
+
     const [users] = await pool.query(
       `
         SELECT employee_id
