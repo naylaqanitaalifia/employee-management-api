@@ -186,7 +186,115 @@ const refreshToken = async (req, res) => {
   }
 };
 
+const updatePassword = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { current_password, new_password, confirm_password } = req.body;
+
+    if (!current_password) {
+      return res.status(400).json({
+        code: 400,
+        status: false,
+        message: "Current password is required",
+      });
+    }
+
+    if (!new_password) {
+      return res.status(400).json({
+        code: 400,
+        status: false,
+        message: "New password is required",
+      });
+    }
+
+    if (!confirm_password) {
+      return res.status(400).json({
+        code: 400,
+        status: false,
+        message: "Confirm password is required",
+      });
+    }
+
+    if (new_password.length < 8) {
+      return res.status(400).json({
+        code: 400,
+        status: false,
+        message: "New password must be at least 8 characters long",
+      });
+    }
+
+    if (new_password !== confirm_password) {
+      return res.status(400).json({
+        code: 400,
+        status: false,
+        message: "New password and confirm password do not match",
+      });
+    }
+
+    const [users] = await pool.query(
+      `
+        SELECT password
+        FROM users
+        WHERE id = ?
+        LIMIT 1
+      `,
+      [id],
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        status: false,
+        message: "User not found",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(current_password, users[0].password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        code: 400,
+        status: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    if (current_password === new_password) {
+      return res.status(400).json({
+        code: 400,
+        status: false,
+        message: "New password cannot be the same as the current password",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    await pool.query(
+      `
+        UPDATE users
+        SET password = ?
+        WHERE id = ?
+      `,
+      [hashedPassword, id],
+    );
+
+    res.status(200).json({
+      code: 200,
+      status: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   login,
   refreshToken,
+  updatePassword,
 };
