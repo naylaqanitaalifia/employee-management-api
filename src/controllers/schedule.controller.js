@@ -442,33 +442,41 @@ const createSchedule = async (req, res) => {
 const updateSchedule = async (req, res) => {
   try {
     const { id } = req.params;
+    const updated_by = req.user.id;
+
     const {
-      employee_id,
-      period_month,
-      basic_salary,
-      allowance,
-      overtime_pay,
-      deduction,
+      title,
+      type,
+      description,
+      start_date,
+      end_date,
+      start_time,
+      end_time,
+      location_type,
+      location,
+      online_meeting_link,
+      employee_ids,
     } = req.body;
 
     const [existing] = await pool.query(
-      "SELECT id, status FROM payrolls WHERE id = ?",
+      "SELECT id FROM schedules WHERE id = ?",
       [id],
     );
 
     if (existing.length === 0) {
       return res.status(404).json({
-        message: "Payroll not found",
+        message: "Schedule not found",
       });
     }
 
     const errors = required({
-      employee_id,
-      period_month,
-      basic_salary,
-      allowance,
-      overtime_pay,
-      deduction,
+      title,
+      type,
+      start_date,
+      end_date,
+      start_time,
+      end_time,
+      location_type,
     });
 
     if (Object.keys(errors).length > 0) {
@@ -480,69 +488,151 @@ const updateSchedule = async (req, res) => {
       });
     }
 
-    if (existing[0].status !== "draft") {
+    if (!Array.isArray(employee_ids) || employee_ids.length === 0) {
       return res.status(400).json({
         status: false,
         code: 400,
-        message: "Only draft payroll can be updated",
+        message: "Employee ids must be a non-empty array",
       });
     }
 
-    const [employee] = await pool.query(
-      "SELECT id, name FROM employees WHERE id = ?",
-      [employee_id],
+    if (!["online", "offline", "hybrid"].includes(location_type)) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid location type",
+      });
+    }
+
+    if (location_type === "online" && !online_meeting_link) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Online meeting link is required for online location type",
+      });
+    }
+
+    if (location_type === "offline" && !location) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Location is required for offline location type",
+      });
+    }
+
+    if (location_type === "hybrid" && (!location || !online_meeting_link)) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message:
+          "Location and online meeting link is required for hybrid location type",
+      });
+    }
+
+    const [employees] = await pool.query(
+      "SELECT id, name, photo FROM employees WHERE id IN (?)",
+      [employee_ids],
     );
 
-    if (employee.length === 0) {
+    if (employees.length !== employee_ids.length) {
       return res.status(404).json({
         status: false,
         code: 404,
-        message: "Employee not found",
+        message: "One or more employees not found",
       });
     }
 
-    const net_salary =
-      Number(basic_salary) +
-      Number(allowance) +
-      Number(overtime_pay) -
-      Number(deduction);
-
     await pool.query(
-      `UPDATE payrolls
-       SET employee_id = ?,
-           period_month = ?,
-           basic_salary = ?,
-           allowance = ?,
-           overtime_pay = ?,
-           deduction = ?,
-           net_salary = ?
+      `UPDATE schedules
+       SET title = ?,
+           type = ?,
+           description = ?,
+           start_date = ?,
+           end_date = ?,
+           start_time = ?,
+           end_time = ?,
+           location_type = ?,
+           location = ?,
+           online_meeting_link = ?,
+           updated_by = ?
        WHERE id = ?`,
       [
-        employee_id,
-        period_month,
-        basic_salary,
-        allowance,
-        overtime_pay,
-        deduction,
-        net_salary,
+        title,
+        type,
+        description,
+        start_date,
+        end_date,
+        start_time,
+        end_time,
+        location_type,
+        location,
+        online_meeting_link,
+        updated_by,
         id,
       ],
+    );
+
+    await pool.query(
+      `
+        DELETE FROM schedule_employees
+        WHERE schedule_id = ?
+      `,
+      [id],
+    );
+
+    await pool.query(
+      `
+        UPDATE schedule_employees 
+        SET deleted_at = NOW(),
+            deleted_by = ?
+        WHERE schedule_id = ?
+          AND deleted_at IS NULL
+      `,
+      [updated_by, id],
+    );
+
+    const scheduleEmployee = employee_ids.map((employee_id) => [
+      uuidv4(),
+      id,
+      employee_id,
+      updated_by,
+    ]);
+
+    await pool.query(
+      `
+        INSERT INTO schedule_employees (
+          id,
+          schedule_id, 
+          employee_id,
+          created_by
+        )
+        VALUES ?
+      `,
+      [scheduleEmployee],
     );
 
     res.status(200).json({
       status: true,
       code: 200,
-      message: "Payroll updated successfully",
+      message: "Schedule updated successfully",
       data: {
         id,
-        employee_id,
-        period_month,
-        basic_salary,
-        allowance,
-        overtime_pay,
-        deduction,
-        net_salary,
-        status: existing[0].status,
+        title,
+        type,
+        description,
+        start_date,
+        end_date,
+        start_time,
+        end_time,
+        location_type,
+        location,
+        online_meeting_link,
+        employee_ids: employees.map((employee) => ({
+          id: employee.id,
+          name: employee.name,
+          photo: employee.photo,
+        })),
+        updated_by,
       },
     });
   } catch (error) {
@@ -560,32 +650,25 @@ const deleteSchedule = async (req, res) => {
     const { id } = req.params;
 
     const [result] = await pool.query(
-      "SELECT id, status FROM payrolls WHERE id = ?",
+      `
+        DELETE FROM schedules 
+        WHERE id = ?
+      `,
       [id],
     );
 
-    if (result.length === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({
         status: false,
         code: 404,
-        message: "Payroll not found",
+        message: "Schedule not found",
       });
     }
-
-    if (result[0].status !== "draft") {
-      return res.status(400).json({
-        status: false,
-        code: 400,
-        message: "Payroll cannot be deleted",
-      });
-    }
-
-    await pool.query("DELETE FROM payrolls WHERE id = ?", [id]);
 
     res.status(200).json({
       status: true,
       code: 200,
-      message: "Payroll deleted successfully",
+      message: "Schedule deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
