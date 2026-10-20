@@ -302,7 +302,7 @@ const createLeave = async (req, res) => {
       employee_id,
     });
 
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(errors).length > 0) { // ambil nama-nama properti dari sebuah object (errors)
       return res.status(400).json({
         status: false,
         code: 400,
