@@ -20,18 +20,24 @@ const authMiddleware = require("./middleware/auth-middleware");
 
 const app = express(); // Membuat instance aplikasi Express.
 
-app.use((req, res, next) => {
-  if (req.path.startsWith("/uploads/")) {
-    console.log("UPLOAD REQUEST:", req.method, req.path);
-  }
-
-  next();
-});
-
 app.use(cors());
 app.use(express.json()); // Membuat Express bisa membaca request body dalam format JSON.
 
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    console.log("STATIC FILE REQUEST:", req.originalUrl);
+
+    res.on("finish", () => {
+      console.log("STATIC FILE STATUS:", res.statusCode);
+    });
+
+    next();
+  },
+  express.static(path.join(__dirname, "../uploads")),
+);
 
 app.use(
   "/api-docs", // Menentukan URL untuk membuka dokumentasi Swagger.
