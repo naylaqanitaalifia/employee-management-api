@@ -18,6 +18,8 @@ const payrollRoutes = require("./routes/payroll.route");
 const scheduleRoutes = require("./routes/schedule.route");
 const authMiddleware = require("./middleware/auth-middleware");
 
+const fs = require("fs");//
+
 const app = express(); // Membuat instance aplikasi Express.
 
 app.use(cors());
@@ -28,10 +30,17 @@ app.use(express.json()); // Membuat Express bisa membaca request body dalam form
 app.use(
   "/uploads",
   (req, res, next) => {
-    console.log("STATIC FILE REQUEST:", req.originalUrl);
+    const filePath = path.join(
+      __dirname,
+      "../uploads",
+      req.path.replace(/^\/+/, ""),
+    );
+
+    console.log("FILE:", req.path);
+    console.log("EXISTS:", fs.existsSync(filePath));
 
     res.on("finish", () => {
-      console.log("STATIC FILE STATUS:", res.statusCode);
+      console.log("STATUS:", res.statusCode);
     });
 
     next();
