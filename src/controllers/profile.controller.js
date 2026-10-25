@@ -15,7 +15,7 @@ const bcrypt = require("bcrypt");
  *        200:
  *          description: Successfully retrieved profile
  *        404:
- *          description: profile not found
+ *          description: Profile not found
  *        500:
  *          description: Internal server error
  */
@@ -263,7 +263,22 @@ const updateProfilePhoto = async (req, res) => {
 
     const employeeId = users[0].employee_id;
 
-    const photoPath = `/uploads/profile/${req.file.filename}`;
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "employee-management/profile",
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) {
+            return reject(error);
+          }
+        },
+      );
+      stream.end(req.file.buffer);
+    });
+
+    const photoUrl = result.secure_url;
 
     await pool.query(
       `
@@ -272,14 +287,14 @@ const updateProfilePhoto = async (req, res) => {
         WHERE id = ?
           AND deleted_at IS NULL
       `,
-      [photoPath, employeeId],
+      [photoUrl, employeeId],
     );
     return res.status(200).json({
       status: true,
       code: 200,
       message: "Profile photo updated successfully",
       data: {
-        photo: photoPath,
+        photo: photoUrl,
       },
     });
   } catch (error) {
