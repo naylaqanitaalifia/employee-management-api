@@ -2,6 +2,7 @@ const pool = require("../config/db");
 const Joi = require("joi"); // Mengimpor Joi untuk melakukan validasi query parameter.
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
+const cloudinary = require("../config/cloudinary");
 
 // GET PROFILE
 
@@ -273,6 +274,8 @@ const updateProfilePhoto = async (req, res) => {
           if (error) {
             return reject(error);
           }
+
+          resolve(result);
         },
       );
       stream.end(req.file.buffer);
