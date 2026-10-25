@@ -25,28 +25,28 @@ const app = express(); // Membuat instance aplikasi Express.
 app.use(cors());
 app.use(express.json()); // Membuat Express bisa membaca request body dalam format JSON.
 
-// app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-app.use(
-  "/uploads",
-  (req, res, next) => {
-    const filePath = path.join(
-      __dirname,
-      "../uploads",
-      req.path.replace(/^\/+/, ""),
-    );
+// app.use(
+//   "/uploads",
+//   (req, res, next) => {
+//     const filePath = path.join(
+//       __dirname,
+//       "../uploads",
+//       req.path.replace(/^\/+/, ""),
+//     );
 
-    console.log("FILE:", req.path);
-    console.log("EXISTS:", fs.existsSync(filePath));
+//     console.log("FILE:", req.path);
+//     console.log("EXISTS:", fs.existsSync(filePath));
 
-    res.on("finish", () => {
-      console.log("STATUS:", res.statusCode);
-    });
+//     res.on("finish", () => {
+//       console.log("STATUS:", res.statusCode);
+//     });
 
-    next();
-  },
-  express.static(path.join(__dirname, "../uploads")),
-);
+//     next();
+//   },
+//   express.static(path.join(__dirname, "../uploads")),
+// );
 
 app.use(
   "/api-docs", // Menentukan URL untuk membuka dokumentasi Swagger.
