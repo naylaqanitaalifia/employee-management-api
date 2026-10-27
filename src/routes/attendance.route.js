@@ -3,11 +3,13 @@ const router = express.Router();
 
 const {
   getAllAttendances,
+  getTodayAttendances,
   clockIn,
-    clockOut,
+  clockOut,
 } = require("../controllers/attendance.controller");
 
 router.get("/", getAllAttendances);
+router.get("/today", authenticate, getTodayAttendances);
 router.post("/clock-in", clockIn);
 router.post("/clock-out", clockOut);
 

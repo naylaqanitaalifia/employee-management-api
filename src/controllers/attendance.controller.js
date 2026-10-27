@@ -1,3 +1,4 @@
+const e = require("cors");
 const pool = require("../config/db"); // Mengimpor koneksi database MySQL.
 const Joi = require("joi"); // Mengimpor Joi untuk melakukan validasi query parameter.
 const { v4: uuidv4 } = require("uuid");
@@ -154,6 +155,51 @@ const getAllAttendances = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      status: false,
+      code: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const getTodayAttendances = async (req, res) => {
+  try {
+    const employeeId = req.user.employee_id;
+
+    if (!employeeId) {
+      return res.status(400).json({
+        status: false,
+        code: 404,
+        message: "Employee not found",
+      });
+    }
+
+    const [rows] = await pool.query(
+      `
+        SELECT 
+          id,
+          employee_id,
+          attendance_date,
+          clock_in,
+          clock_out,
+          status
+        FROM attendances
+        WHERE employee_id = ?
+          AND attendance_date = CURDATE()
+        LIMIT 1
+      `,
+      [employeeId],
+    );
+
+    return res.status(200).json({
+      status: true,
+      code: 200,
+      message: "Today's attendance fetched successfully",
+      data: rows[0] ?? null,
+    });
+  } catch (error) {
+    return res.status(500).json({
       status: false,
       code: 500,
       message: "Internal Server Error",
@@ -364,6 +410,7 @@ const clockOut = async (req, res) => {
 
 module.exports = {
   getAllAttendances,
+  getTodayAttendances,
   clockIn,
   clockOut,
 };
