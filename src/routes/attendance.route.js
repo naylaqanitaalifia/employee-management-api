@@ -9,7 +9,7 @@ const {
 } = require("../controllers/attendance.controller");
 
 router.get("/", getAllAttendances);
-router.get("/today", authenticate, getTodayAttendances);
+router.get("/today", getTodayAttendances);
 router.post("/clock-in", clockIn);
 router.post("/clock-out", clockOut);
 
