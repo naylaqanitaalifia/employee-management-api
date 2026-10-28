@@ -110,7 +110,6 @@ const getAllAttendances = async (req, res) => {
         FROM attendances a
         INNER JOIN employees e
           ON a.employee_id = e.id
-        WHERE e.name LIKE ?
         ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit} OFFSET ${offset}
