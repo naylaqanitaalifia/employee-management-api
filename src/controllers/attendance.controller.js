@@ -108,9 +108,9 @@ const getAllAttendances = async (req, res) => {
             e.name AS employee_name,
             e.photo AS employee_photo
         FROM attendances a
-        WHERE name LIKE ?
         INNER JOIN employees e
-        ON a.employee_id = e.id
+          ON a.employee_id = e.id
+        WHERE e.name LIKE ?
         ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ${limit} OFFSET ${offset}
@@ -123,7 +123,7 @@ const getAllAttendances = async (req, res) => {
         SELECT COUNT(*) as total
         FROM attendances a
         INNER JOIN employees e
-        ON a.employee_id = e.id
+          ON a.employee_id = e.id
         ${whereClause}
       `,
       queryParams,
