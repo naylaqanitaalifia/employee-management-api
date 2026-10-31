@@ -81,7 +81,7 @@ const getAllPositions = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["name", "department", "search"];
+    const allowedFilterFields = ["name", "department_id"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -100,18 +100,24 @@ const getAllPositions = async (req, res) => {
     }
 
     // Mengambil nilai name dari filter.
-    const searchKeyword =
-      parsedFilter.search ||
-      parsedFilter.name ||
-      parsedFilter.department?.name ||
-      "";
+    const filterName = parsedFilter.name || "";
+    const filterDepartmentId = parsedFilter.department_id || "";
 
     let whereConditions = [];
     let queryParams = [];
 
-    if (searchKeyword) {
-      whereConditions.push(`(p.name LIKE ? OR d.name LIKE ?)`);
-      queryParams.push(`%${searchKeyword}%`, `%${searchKeyword}%`);
+    if (filterName) {
+      whereConditions.push(`(p.name LIKE ?)`);
+      queryParams.push(`%${filterName}%`);
+    }
+
+    if (filterDepartmentId) {
+      whereConditions.push(`p.department_id = ?`);
+      queryParams.push(filterDepartmentId);
+    }
+
+    if (!param.with_deleted) {
+      whereConditions.push(`p.deleted_at IS NULL`);
     }
 
     const whereClause =
@@ -156,10 +162,6 @@ const getAllPositions = async (req, res) => {
       });
     }
 
-    const deletedCondition = param.with_deleted
-      ? ""
-      : "AND p.deleted_at IS NULL";
-
     const [rows] = await pool.query(
       `
         SELECT p.*, 
@@ -170,9 +172,9 @@ const getAllPositions = async (req, res) => {
         ON p.department_id = d.id 
         ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
-        LIMIT ${limit} OFFSET ${offset}
+        LIMIT ? OFFSET ?
       `,
-      queryParams,
+      [...queryParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
@@ -186,7 +188,7 @@ const getAllPositions = async (req, res) => {
       queryParams,
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       code: 200,
       message: "Positions fetched successfully",
@@ -208,7 +210,7 @@ const getAllPositions = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
       code: 500,
       message: "Internal Server Error",
