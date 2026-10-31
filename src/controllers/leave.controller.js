@@ -192,7 +192,7 @@ const getAllLeaves = async (req, res) => {
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ? OFFSET ?
     `,
-      [...querParams, limit, offset],
+      [...queryParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
