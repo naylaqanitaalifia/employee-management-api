@@ -89,7 +89,7 @@ const getAllEmployees = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["name"];
+    const allowedFilterFields = ["name", "department_id", "position_id"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -109,6 +109,35 @@ const getAllEmployees = async (req, res) => {
 
     // Mengambil nilai name dari filter.
     const filterName = parsedFilter.name || "";
+    const filterDepartmentId = parsedFilter.department_id || "";
+    const filterPositionId = parsedFilter.position_id || "";
+
+    let whereConditions = [];
+    let queryParams = [];
+
+    if (filterName) {
+      whereConditions.push(`e.name LIKE ?`);
+      queryParams.push(`%${filterName}%`);
+    }
+
+    if (filterDepartmentId) {
+      whereConditions.push(`e.department_id LIKE ?`);
+      queryParams.push(`%${filterDepartmentId}%`);
+    }
+
+    if (filterPositionId) {
+      whereConditions.push(`e.position_id LIKE ?`);
+      queryParams.push(`%${filterPositionId}%`);
+    }
+
+    if (!param.with_deleted) {
+      whereConditions.push(`e.deleted_at IS NULL`);
+    }
+
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
     const limit = param.limit;
 
@@ -116,7 +145,6 @@ const getAllEmployees = async (req, res) => {
     const offset = (param.page - 1) * limit;
 
     // Daftar kolom yang boleh digunakan untuk sorting.
-
     const allowedOrderFields = {
       id: "e.id",
       name: "e.name",
@@ -136,10 +164,6 @@ const getAllEmployees = async (req, res) => {
         message: "Invalid order field",
       });
     }
-
-    const deletedCondition = param.with_deleted
-      ? ""
-      : "AND e.deleted_at IS NULL";
 
     const [rows] = await pool.query(
       `
@@ -162,13 +186,11 @@ const getAllEmployees = async (req, res) => {
           ON e.department_id = d.id
         INNER JOIN positions p 
           ON e.position_id = p.id
-        WHERE e.name LIKE ?
-        ${deletedCondition}
+        ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
-        LIMIT ${limit}
-        OFFSET ${offset}
+        LIMIT ? OFFSET ?
     `,
-      [`%${filterName}%`],
+      [...queryParams, limit, pool.off],
     );
 
     const [[{ total }]] = await pool.query(
@@ -179,13 +201,12 @@ const getAllEmployees = async (req, res) => {
           ON e.department_id = d.id
         INNER JOIN positions p
           ON e.position_id = p.id
-        WHERE e.name LIKE ?
-        ${deletedCondition}
+        ${whereClause}
       `,
-      [`%${filterName}%`],
+      queryParams,
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       code: 200,
       message: "Employees fetched successfully",
@@ -218,7 +239,7 @@ const getAllEmployees = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
       code: 500,
       message: "Internal Server Error",

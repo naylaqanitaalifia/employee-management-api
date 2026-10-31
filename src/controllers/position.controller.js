@@ -131,17 +131,6 @@ const getAllPositions = async (req, res) => {
     const offset = (param.page - 1) * limit;
 
     // Daftar kolom yang boleh digunakan untuk sorting.
-    // const allowedOrderFields = [
-    //   "id",
-    //   "name",
-    //   "created_at",
-    //   "created_by",
-    //   "updated_at",
-    //   "updated_by",
-    //   "deleted_at",
-    //   "deleted_by",
-    // ];
-
     const allowedOrderFields = {
       id: "p.id",
       name: "p.name",
