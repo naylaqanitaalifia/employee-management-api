@@ -201,7 +201,6 @@ const getAllLeaves = async (req, res) => {
         FROM leaves l
         INNER JOIN employees e
           ON l.employee_id = e.id
-        WHERE e.name LIKE ?
         ${whereClause}
       `,
       queryParams,
