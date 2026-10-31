@@ -35,7 +35,7 @@ const getAllAttendances = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["search", "name"];
+    const allowedFilterFields = ["name", "status"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -53,15 +53,24 @@ const getAllAttendances = async (req, res) => {
       });
     }
 
-    const searchKeyword = parsedFilter.search || parsedFilter.name;
-    ("");
+    const filterName = parsedFilter.name;
+    const filterStatus = parsedFilter.status;
 
     let whereConditions = [];
     let queryParams = [];
 
-    if (searchKeyword) {
+    if (filterName) {
       whereConditions.push(`(e.name LIKE ?)`);
-      queryParams.push(`%${searchKeyword}%`);
+      queryParams.push(`%${filterName}%`);
+    }
+
+    if (filterStatus) {
+      whereConditions.push(`a.status = ?`);
+      queryParams.push(filterStatus);
+    }
+
+    if (!param.with_deleted) {
+      whereConditions.push(`e.deleted_at IS NULL`);
     }
 
     const whereClause =
@@ -98,10 +107,6 @@ const getAllAttendances = async (req, res) => {
       });
     }
 
-    // const deletedCondition = param.with_deleted
-    //   ? ""
-    //   : "AND p.deleted_at IS NULL";
-
     const [rows] = await pool.query(
       `
         SELECT a.*,
@@ -112,9 +117,9 @@ const getAllAttendances = async (req, res) => {
           ON a.employee_id = e.id
         ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
-        LIMIT ${limit} OFFSET ${offset}
+        LIMIT ? OFFSET ?
       `,
-      queryParams,
+      [...queryParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
@@ -128,7 +133,7 @@ const getAllAttendances = async (req, res) => {
       queryParams,
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       code: 200,
       message: "Attendances fetched successfully",
@@ -153,7 +158,7 @@ const getAllAttendances = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
       code: 500,
       message: "Internal Server Error",
