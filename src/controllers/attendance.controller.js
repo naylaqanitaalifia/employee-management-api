@@ -35,7 +35,7 @@ const getAllAttendances = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["name", "status"];
+    const allowedFilterFields = ["name", "status", "start_date", "end_date"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -55,6 +55,8 @@ const getAllAttendances = async (req, res) => {
 
     const filterName = parsedFilter.name;
     const filterStatus = parsedFilter.status;
+    const filterStartDate = parsedFilter.start_date;
+    const filterEndDate = parsedFilter.end_date;
 
     let whereConditions = [];
     let queryParams = [];
@@ -67,6 +69,11 @@ const getAllAttendances = async (req, res) => {
     if (filterStatus) {
       whereConditions.push(`a.status = ?`);
       queryParams.push(filterStatus);
+    }
+
+    if (filterStartDate && filterEndDate) {
+      whereConditions.push(`a.attendance_date BETWEEN ? AND ?`);
+      queryParams.push(filterStartDate, filterEndDate);
     }
 
     if (!param.with_deleted) {
