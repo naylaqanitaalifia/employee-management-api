@@ -84,7 +84,7 @@ const getAllLeaves = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["name"];
+    const allowedFilterFields = ["name", "status"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -104,6 +104,29 @@ const getAllLeaves = async (req, res) => {
 
     // Mengambil nilai name dari filter.
     const filterName = parsedFilter.name || "";
+    const filterStatus = parsedFilter.status || "";
+
+    let whereConditions = [];
+    let queryParams = [];
+
+    if (filterName) {
+      whereConditions.push(`(l.name LIKE ?)`);
+      queryParams.push(`%${filterName}%`);
+    }
+
+    if (filterStatus) {
+      whereConditions.push(`l.status = ?`);
+      queryParams.push(filterStatus);
+    }
+
+    if (!param.with_deleted) {
+      whereConditions.push(`e.deleted_at IS NULL`);
+    }
+
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
     const limit = param.limit;
 
@@ -111,7 +134,6 @@ const getAllLeaves = async (req, res) => {
     const offset = (param.page - 1) * limit;
 
     // Daftar kolom yang boleh digunakan untuk sorting.
-
     const allowedOrderFields = {
       id: "l.id",
       name: "e.name",
@@ -133,17 +155,13 @@ const getAllLeaves = async (req, res) => {
       });
     }
 
-    const deletedCondition = param.with_deleted
-      ? ""
-      : "AND l.deleted_at IS NULL";
-
     if (role !== "ADMIN") {
       const [user] = await pool.query(
         "SELECT employee_id FROM users WHERE id = ?",
         [id],
       );
 
-      if (user.length === 0) {
+      if (user.length === 0 || user[0].employee_id) {
         return res.status(404).json({
           status: false,
           code: 404,
@@ -151,8 +169,8 @@ const getAllLeaves = async (req, res) => {
         });
       }
 
-      // whereClause += ` AND l.employee_id = ?`;
-      // queryParams.push(user[0].employee_id);
+      whereConditions.push("l.employee_id = ?");
+      queryParams.push(user[0].employee_id);
     }
 
     const [rows] = await pool.query(
@@ -170,13 +188,11 @@ const getAllLeaves = async (req, res) => {
         FROM leaves l 
         INNER JOIN employees e 
           ON l.employee_id = e.id
-        WHERE e.name LIKE ?
-        ${deletedCondition}
+        ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
-        LIMIT ${limit}
-        OFFSET ${offset}
+        LIMIT ? OFFSET ?
     `,
-      [`%${filterName}%`],
+      [...querParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
@@ -186,12 +202,12 @@ const getAllLeaves = async (req, res) => {
         INNER JOIN employees e
           ON l.employee_id = e.id
         WHERE e.name LIKE ?
-        ${deletedCondition}
+        ${whereClause}
       `,
-      [`%${filterName}%`],
+      queryParams,
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       code: 200,
       message: "Leaves fetched successfully",
@@ -215,7 +231,7 @@ const getAllLeaves = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
       code: 500,
       message: "Internal Server Error",
@@ -302,7 +318,8 @@ const createLeave = async (req, res) => {
       employee_id,
     });
 
-    if (Object.keys(errors).length > 0) { // ambil nama-nama properti dari sebuah object (errors)
+    if (Object.keys(errors).length > 0) {
+      // ambil nama-nama properti dari sebuah object (errors)
       return res.status(400).json({
         status: false,
         code: 400,
