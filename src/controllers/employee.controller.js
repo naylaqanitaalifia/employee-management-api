@@ -121,12 +121,12 @@ const getAllEmployees = async (req, res) => {
     }
 
     if (filterDepartmentId) {
-      whereConditions.push(`e.department_id LIKE ?`);
+      whereConditions.push(`e.department_id = ?`);
       queryParams.push(`%${filterDepartmentId}%`);
     }
 
     if (filterPositionId) {
-      whereConditions.push(`e.position_id LIKE ?`);
+      whereConditions.push(`e.position_id = ?`);
       queryParams.push(`%${filterPositionId}%`);
     }
 
@@ -190,7 +190,7 @@ const getAllEmployees = async (req, res) => {
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
         LIMIT ? OFFSET ?
     `,
-      [...queryParams, limit, pool.off],
+      [...queryParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
