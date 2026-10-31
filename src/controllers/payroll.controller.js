@@ -35,7 +35,7 @@ const getAllPayrolls = async (req, res) => {
       }
     }
 
-    const allowedFilterFields = ["name"];
+    const allowedFilterFields = ["name", "status"];
 
     // Mengambil semua nama field yang dikirim di dalam filter.
     const filterFields = Object.keys(parsedFilter);
@@ -55,6 +55,29 @@ const getAllPayrolls = async (req, res) => {
 
     // Mengambil nilai name dari filter.
     const filterName = parsedFilter.name || "";
+    const filterStatus = parsedFilter.status || "";
+
+    let whereConditions = [];
+    let queryParams = [];
+
+    if (filterName) {
+      whereConditions.push("e.name LIKE ?");
+      queryParams.push(`%${filterName}%`);
+    }
+
+    if (filterStatus) {
+      whereConditions.push("p.status = ?");
+      queryParams.push(filterStatus);
+    }
+
+    if (!param.with_deleted) {
+      whereConditions.push(`e.deleted_at IS NULL`);
+    }
+
+    const whereClause =
+      whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
 
     const limit = param.limit;
 
@@ -62,7 +85,6 @@ const getAllPayrolls = async (req, res) => {
     const offset = (param.page - 1) * limit;
 
     // Daftar kolom yang boleh digunakan untuk sorting.
-
     const allowedOrderFields = {
       id: "p.id",
       name: "e.name",
@@ -84,10 +106,6 @@ const getAllPayrolls = async (req, res) => {
       });
     }
 
-    const deletedCondition = param.with_deleted
-      ? ""
-      : "AND p.deleted_at IS NULL";
-
     if (role !== "ADMIN") {
       const [user] = await pool.query(
         "SELECT employee_id FROM users WHERE id = ?",
@@ -102,8 +120,8 @@ const getAllPayrolls = async (req, res) => {
         });
       }
 
-      // whereClause += ` AND p.employee_id = ?`;
-      // queryParams.push(user[0].employee_id);
+      whereClause += ` AND p.employee_id = ?`;
+      queryParams.push(user[0].employee_id);
     }
 
     const [rows] = await pool.query(
@@ -124,13 +142,11 @@ const getAllPayrolls = async (req, res) => {
         FROM payrolls p
         INNER JOIN employees e 
             ON p.employee_id = e.id
-        WHERE e.name LIKE ?
-        ${deletedCondition}
+        ${whereClause}
         ORDER BY ${allowedOrderFields[param.order_field]} ${param.order_direction}
-        LIMIT ${limit}
-        OFFSET ${offset}
+        LIMIT ? OFFSET ?
     `,
-      [`%${filterName}%`],
+      [...queryParams, limit, offset],
     );
 
     const [[{ total }]] = await pool.query(
@@ -139,13 +155,12 @@ const getAllPayrolls = async (req, res) => {
         FROM payrolls p
         INNER JOIN employees e
           ON p.employee_id = e.id
-        WHERE e.name LIKE ?
-        ${deletedCondition}
+        ${whereClause}
       `,
-      [`%${filterName}%`],
+      queryParams,
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       code: 200,
       message: "Payroll fetched successfully",
@@ -154,27 +169,27 @@ const getAllPayrolls = async (req, res) => {
         page: param.page,
         total_count: total,
         list: rows.map((row) => ({
-        id: row.id,
-        employee: {
-          id: row.employee_id,
-          name: row.employee_name,
-        },
-        period_month: row.period_month,
-        basic_salary: row.basic_salary,
-        allowance: row.allowance,
-        overtime_pay: row.overtime_pay,
-        deduction: row.deduction,
-        net_salary: row.net_salary,
-        status: row.status,
-        created_at: row.created_at,
-        // created_by: row.created_by,
-        updated_at: row.updated_at,
-        // updated_by: row.updated_by,
-      })),
-      }
+          id: row.id,
+          employee: {
+            id: row.employee_id,
+            name: row.employee_name,
+          },
+          period_month: row.period_month,
+          basic_salary: row.basic_salary,
+          allowance: row.allowance,
+          overtime_pay: row.overtime_pay,
+          deduction: row.deduction,
+          net_salary: row.net_salary,
+          status: row.status,
+          created_at: row.created_at,
+          // created_by: row.created_by,
+          updated_at: row.updated_at,
+          // updated_by: row.updated_by,
+        })),
+      },
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
       code: 500,
       message: "Internal Server Error",
