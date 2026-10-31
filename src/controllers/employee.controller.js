@@ -122,12 +122,12 @@ const getAllEmployees = async (req, res) => {
 
     if (filterDepartmentId) {
       whereConditions.push(`e.department_id = ?`);
-      queryParams.push(`%${filterDepartmentId}%`);
+      queryParams.push(filterDepartmentId);
     }
 
     if (filterPositionId) {
       whereConditions.push(`e.position_id = ?`);
-      queryParams.push(`%${filterPositionId}%`);
+      queryParams.push(filterPositionId);
     }
 
     if (!param.with_deleted) {
