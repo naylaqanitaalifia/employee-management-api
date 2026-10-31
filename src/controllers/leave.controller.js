@@ -110,7 +110,7 @@ const getAllLeaves = async (req, res) => {
     let queryParams = [];
 
     if (filterName) {
-      whereConditions.push(`(l.name LIKE ?)`);
+      whereConditions.push(`(e.name LIKE ?)`);
       queryParams.push(`%${filterName}%`);
     }
 
