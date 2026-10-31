@@ -464,6 +464,23 @@ const deleteDepartment = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const [employees] = await pool.query(
+      `
+        SELECT id FROM employees
+        WHERE department_id = ?
+        LIMIT 1
+      `,
+      [id],
+    );
+
+    if (employees.length > 0) {
+      return res.status(409).json({
+        status: false,
+        code: 409,
+        message: "Cannot delete department with employees",
+      });
+    }
+
     const [result] = await pool.query(
       `
         DELETE FROM departments 
@@ -480,17 +497,17 @@ const deleteDepartment = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       code: 200,
       message: "Department deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
       code: 500,
       message: "Internal Server Error",
-      error: error.message,
+      // error: error.message,
     });
   }
 };
