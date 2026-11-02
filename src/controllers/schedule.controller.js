@@ -129,7 +129,9 @@ const getAllSchedules = async (req, res) => {
             s.end_date,
             s.start_time,
             s.end_time,
+            s.location_type,
             s.location,
+            s.online_meeting_link,
             s.created_at,
             s.created_by
         FROM schedules s
@@ -171,7 +173,9 @@ const getAllSchedules = async (req, res) => {
           end_date: row.end_date,
           start_time: row.start_time,
           end_time: row.end_time,
+          location_type: row.location_type,
           location: row.location,
+          online_meeting_link: row.online_meeting_link,
           created_at: row.created_at,
           created_by: row.created_by
         })),
