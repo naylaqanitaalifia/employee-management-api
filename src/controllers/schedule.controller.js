@@ -129,10 +129,9 @@ const getAllSchedules = async (req, res) => {
             s.end_date,
             s.start_time,
             s.end_time,
+            s.location,
             s.created_at,
-            s.created_by,
-            s.updated_at,
-            s.updated_by
+            s.created_by
         FROM schedules s
         WHERE s.title LIKE ?
         ${deletedCondition}
@@ -172,10 +171,9 @@ const getAllSchedules = async (req, res) => {
           end_date: row.end_date,
           start_time: row.start_time,
           end_time: row.end_time,
+          location: row.location,
           created_at: row.created_at,
-          created_by: row.created_by,
-          updated_at: row.updated_at,
-          updated_by: row.updated_by,
+          created_by: row.created_by
         })),
       },
     });
